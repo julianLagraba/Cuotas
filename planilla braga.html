@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Cuotas Alimentarias - BRAGA</title>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --ink:#1f2937;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --ok:#047857;
+      --ok-soft:#ecfdf5;
+      --warn:#b45309;
+      --warn-soft:#fffbeb;
+      --danger:#b91c1c;
+      --danger-soft:#fef2f2;
+      --soft:#f8fafc;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+    }
+    header{
+      background:linear-gradient(135deg,#1e3a8a,#2563eb);
+      color:white;
+      padding:28px 22px;
+    }
+    header h1{margin:0 0 6px;font-size:27px}
+    header p{margin:0;opacity:.92}
+    main{max-width:1180px;margin:0 auto;padding:22px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .span-12{grid-column:span 12}
+    .span-8{grid-column:span 8}
+    .span-6{grid-column:span 6}
+    .span-4{grid-column:span 4}
+    @media(max-width:900px){.span-8,.span-6,.span-4{grid-column:span 12}}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:18px;
+      box-shadow:0 4px 14px rgba(15,23,42,.06);
+    }
+    h2{font-size:18px;margin:0 0 12px}
+    h3{font-size:16px;margin:0 0 10px}
+    .subtitle{font-size:13px;color:var(--muted);margin:4px 0 14px;line-height:1.4}
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+    }
+    @media(max-width:900px){.summary{grid-template-columns:1fr}}
+    .pill{
+      background:var(--soft);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+    }
+    .pill .label{
+      font-size:12px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+    .pill .value{
+      font-size:22px;
+      font-weight:700;
+      margin-top:6px;
+    }
+    .pill.accent{background:var(--accent-soft);border-color:#bfdbfe}
+    .pill.ok{background:var(--ok-soft);border-color:#a7f3d0}
+    .pill.warn{background:var(--warn-soft);border-color:#fde68a}
+    label{
+      display:block;
+      font-size:13px;
+      color:#374151;
+      margin-bottom:6px;
+      font-weight:700;
+    }
+    input{
+      width:100%;
+      padding:10px 11px;
+      border:1px solid #cbd5e1;
+      border-radius:10px;
+      font-size:14px;
+      background:white;
+    }
+    input[readonly]{background:#f3f4f6;color:#374151;font-weight:700}
+    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    @media(max-width:650px){.form-grid{grid-template-columns:1fr}}
+    .field-note{font-size:12px;color:var(--muted);margin-top:4px}
+    .result-card{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:16px;
+      background:white;
+      height:100%;
+    }
+    .result-card h3{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .badge{
+      font-size:12px;
+      background:var(--accent-soft);
+      color:#1e40af;
+      padding:5px 9px;
+      border-radius:999px;
+      white-space:nowrap;
+    }
+    .badge.warn{background:var(--warn-soft);color:#92400e}
+    .rows{margin-top:10px;border-top:1px solid var(--line)}
+    .row{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 0;
+      border-bottom:1px solid var(--line);
+      font-size:14px;
+    }
+    .row strong{font-size:16px;text-align:right}
+    .formula{
+      margin-top:12px;
+      padding:10px;
+      border-radius:12px;
+      background:#f8fafc;
+      border:1px dashed #cbd5e1;
+      color:#475569;
+      font-size:13px;
+      line-height:1.45;
+    }
+    .alert{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid;
+      font-size:14px;
+    }
+    .alert.ok{background:var(--ok-soft);border-color:#a7f3d0;color:#065f46}
+    .alert.warn{background:var(--warn-soft);border-color:#fde68a;color:#92400e}
+    .alert.danger{background:var(--danger-soft);border-color:#fecaca;color:#991b1b}
+    details{
+      background:white;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 14px;
+    }
+    summary{cursor:pointer;font-weight:700}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+      font-size:14px;
+    }
+    th,td{
+      border-bottom:1px solid var(--line);
+      text-align:right;
+      padding:10px 8px;
+    }
+    th:first-child,td:first-child{text-align:left}
+    th{background:#f8fafc;color:#475569}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    button{
+      border:0;
+      background:var(--accent);
+      color:white;
+      padding:11px 14px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    button.secondary{background:#475569}
+    button.light{background:#e5e7eb;color:#111827}
+    .print-only{display:none}
+    @media print{
+      header,.inputs,.actions,details{display:none!important}
+      body{background:white}
+      main{max-width:none;padding:0}
+      .card{box-shadow:none;border:0;border-radius:0}
+      .print-only{display:block}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Calculadora de Cuotas Alimentarias - BRAGA</h1>
+  <p>Lógica tipo NIETO: se calcula la cuota del 20% y la cuota del 60% surge por diferencia contra Total VISMA.</p>
+</header>
+
+<main>
+  <section class="grid">
+    <div class="card span-12">
+      <h2>Resumen</h2>
+      <div class="summary">
+        <div class="pill accent">
+          <div class="label">Total VISMA</div>
+          <div class="value" id="resVisma">$ 0,00</div>
+        </div>
+        <div class="pill ok">
+          <div class="label">AZAR MIRTA 20%</div>
+          <div class="value" id="resAzar20">$ 0,00</div>
+        </div>
+        <div class="pill warn">
+          <div class="label">AZAR MIRTA 60%</div>
+          <div class="value" id="resAzar60">$ 0,00</div>
+        </div>
+        <div class="pill">
+          <div class="label">Control final</div>
+          <div class="value" id="resControl">$ 0,00</div>
+        </div>
+      </div>
+      <div id="alertBox" class="alert ok"></div>
+    </div>
+
+    <div class="card span-4 inputs">
+      <h2>Datos generales</h2>
+      <div class="form-grid">
+        <div>
+          <label>Agente</label>
+          <input id="agente" value="BRAGA" />
+        </div>
+        <div>
+          <label>Período</label>
+          <input id="periodo" placeholder="Ej.: Mayo 2026" />
+        </div>
+        <div>
+          <label>Total VISMA</label>
+          <input id="totalVisma" type="number" step="0.01" value="2505583" />
+          <div class="field-note">Monto total contra el que se calcula la cuota del 60% por diferencia.</div>
+        </div>
+        <div>
+          <label>Porcentaje cuota calculada</label>
+          <input id="porcAzar20" type="number" step="0.01" value="20" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card span-4 inputs">
+      <h2>Concepto no remunerativo / Refrigerio</h2>
+      <p class="subtitle">AZAR MIRTA 20% toma el porcentaje directo del monto cargado en este concepto.</p>
+      <div class="form-grid">
+        <div>
+          <label>No remunerativo / refrigerio</label>
+          <input id="refrigerio" type="number" step="0.01" value="221337" />
+        </div>
+        <div>
+          <label>Total calculado al 20%</label>
+          <input id="refrigerioTotal20" type="text" value="$ 0,00" readonly />
+          <div class="field-note">Resultado automático: refrigerio × 20%.</div>
+        </div>
+      </div>
+      <div class="formula">
+        Refrigerio cuota 20% = no remunerativo/refrigerio × 20%.
+      </div>
+    </div>
+
+    <div class="card span-4">
+      <h2>Regla protegida</h2>
+      <div class="formula">
+        <strong>AZAR MIRTA 20%</strong> = 20% del refrigerio + 20% del sueldo + 20% del SAC si corresponde.<br><br>
+        <strong>AZAR MIRTA 60%</strong> = Total VISMA - Total cuota 20%.<br><br>
+        La app no calcula la cuota del 60% aplicando porcentaje directo.
+      </div>
+    </div>
+
+    <div class="card span-6 inputs">
+      <h2>Sueldo</h2>
+      <p class="subtitle">Base sueldo: bruto remunerativo menos descuento porcentual, más no remunerativo, menos seguro y AFIP que resta, más AFIP que suma.</p>
+      <div class="form-grid">
+        <div>
+          <label>Bruto remunerativo</label>
+          <input id="sueldoBruto" type="number" step="0.01" value="3455893.96" />
+        </div>
+        <div>
+          <label>Descuento %</label>
+          <input id="sueldoDesc" type="number" step="0.01" value="30.5" />
+        </div>
+        <div>
+          <label>No remunerativo</label>
+          <input id="sueldoNoRem" type="number" step="0.01" value="1118609.63" />
+        </div>
+        <div>
+          <label>Seguro de vida</label>
+          <input id="sueldoSeguro" type="number" step="0.01" value="4457.80" />
+        </div>
+        <div>
+          <label>AFIP que resta</label>
+          <input id="sueldoAfipResta" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>AFIP que suma</label>
+          <input id="sueldoAfipSuma" type="number" step="0.01" value="0" />
+        </div>
+      </div>
+      <div class="formula">
+        Base sueldo = bruto - descuento % + no remunerativo - seguro - AFIP que resta + AFIP que suma.
+      </div>
+    </div>
+
+    <div class="card span-6 inputs">
+      <h2>SAC / adicional eventual</h2>
+      <p class="subtitle">Opcional. Si no corresponde, dejar en cero.</p>
+      <div class="form-grid">
+        <div>
+          <label>SAC bruto remunerativo</label>
+          <input id="sacBruto" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>Descuento SAC %</label>
+          <input id="sacDesc" type="number" step="0.01" value="30.5" />
+        </div>
+        <div>
+          <label>SAC no remunerativo</label>
+          <input id="sacNoRem" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>Seguro SAC</label>
+          <input id="sacSeguro" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>AFIP SAC que resta</label>
+          <input id="sacAfipResta" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>AFIP SAC que suma</label>
+          <input id="sacAfipSuma" type="number" step="0.01" value="0" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card span-6">
+      <div class="result-card">
+        <h3>AZAR MIRTA <span class="badge">20% calculado</span></h3>
+        <div class="rows">
+          <div class="row"><span>Refrigerio</span><strong id="azar20Refri">$ 0,00</strong></div>
+          <div class="row"><span>Sueldo</span><strong id="azar20Sueldo">$ 0,00</strong></div>
+          <div class="row"><span>SAC / adicional</span><strong id="azar20Sac">$ 0,00</strong></div>
+          <div class="row"><span>Total cuota 20%</span><strong id="azar20Total">$ 0,00</strong></div>
+        </div>
+        <div class="formula">
+          Total cuota 20% = refrigerio 20% + sueldo 20% + SAC 20%.
+        </div>
+      </div>
+    </div>
+
+    <div class="card span-6">
+      <div class="result-card">
+        <h3>AZAR MIRTA <span class="badge warn">60% por diferencia</span></h3>
+        <div class="rows">
+          <div class="row"><span>Total VISMA</span><strong id="azar60Visma">$ 0,00</strong></div>
+          <div class="row"><span>Menos cuota 20%</span><strong id="azar60Menos20">$ 0,00</strong></div>
+          <div class="row"><span>Total cuota 60%</span><strong id="azar60Total">$ 0,00</strong></div>
+        </div>
+        <div class="formula">
+          Cuota 60% = Total VISMA - Total cuota 20%.
+        </div>
+      </div>
+    </div>
+
+    <div class="card span-12">
+      <details open>
+        <summary>Ver detalle de bases y control</summary>
+        <table>
+          <thead>
+            <tr>
+              <th>Concepto</th>
+              <th>Base</th>
+              <th>% cuota 20</th>
+              <th>Resultado cuota 20</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Refrigerio / no remunerativo</td>
+              <td id="tblBaseRefri">$ 0,00</td>
+              <td id="tblPctRefri">20%</td>
+              <td id="tblAzar20Refri">$ 0,00</td>
+            </tr>
+            <tr>
+              <td>Sueldo</td>
+              <td id="tblBaseSueldo">$ 0,00</td>
+              <td id="tblPctSueldo">20%</td>
+              <td id="tblAzar20Sueldo">$ 0,00</td>
+            </tr>
+            <tr>
+              <td>SAC / adicional</td>
+              <td id="tblBaseSac">$ 0,00</td>
+              <td id="tblPctSac">20%</td>
+              <td id="tblAzar20Sac">$ 0,00</td>
+            </tr>
+            <tr>
+              <th>Total cuota 20%</th>
+              <th></th>
+              <th></th>
+              <th id="tblAzar20Total">$ 0,00</th>
+            </tr>
+            <tr>
+              <th>Cuota 60% por diferencia</th>
+              <th colspan="2">Total VISMA - Total cuota 20%</th>
+              <th id="tblAzar60Total">$ 0,00</th>
+            </tr>
+            <tr>
+              <th>Control final</th>
+              <th colspan="2">Cuota 20% + Cuota 60%</th>
+              <th id="tblControl">$ 0,00</th>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+
+      <div class="actions">
+        <button onclick="window.print()">Imprimir reporte</button>
+        <button class="secondary" onclick="exportCSV()">Exportar CSV</button>
+        <button class="light" onclick="resetDemo()">Restaurar valores de la planilla</button>
+      </div>
+    </div>
+
+    <div class="card span-12 print-only">
+      <h2>Reporte imprimible - BRAGA</h2>
+      <p><strong>Agente:</strong> <span id="printAgente"></span></p>
+      <p><strong>Período:</strong> <span id="printPeriodo"></span></p>
+    </div>
+  </section>
+</main>
+
+<script>
+  const ids = [
+    'agente','periodo','totalVisma','porcAzar20','refrigerio',
+    'sueldoBruto','sueldoDesc','sueldoNoRem','sueldoSeguro','sueldoAfipResta','sueldoAfipSuma',
+    'sacBruto','sacDesc','sacNoRem','sacSeguro','sacAfipResta','sacAfipSuma'
+  ];
+
+  function n(id){
+    const el = document.getElementById(id);
+    const v = parseFloat(el.value);
+    return isNaN(v) ? 0 : v;
+  }
+
+  function money(v){
+    return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(v || 0);
+  }
+
+  function pct(v){
+    return (v || 0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:2}) + '%';
+  }
+
+  function calc(){
+    const p = n('porcAzar20') / 100;
+    const totalVisma = n('totalVisma');
+
+    const baseRefri = n('refrigerio');
+
+    const sueldoRemNeto = n('sueldoBruto') - (n('sueldoBruto') * n('sueldoDesc') / 100);
+    const baseSueldo = sueldoRemNeto + n('sueldoNoRem') - n('sueldoSeguro') - n('sueldoAfipResta') + n('sueldoAfipSuma');
+
+    const sacRemNeto = n('sacBruto') - (n('sacBruto') * n('sacDesc') / 100);
+    const baseSac = sacRemNeto + n('sacNoRem') - n('sacSeguro') - n('sacAfipResta') + n('sacAfipSuma');
+
+    const azar20Refri = baseRefri * p;
+    const azar20Sueldo = baseSueldo * p;
+    const azar20Sac = baseSac * p;
+    const azar20Total = azar20Refri + azar20Sueldo + azar20Sac;
+
+    const azar60Total = totalVisma - azar20Total;
+    const control = azar20Total + azar60Total;
+
+    document.getElementById('refrigerioTotal20').value = money(azar20Refri);
+
+    document.getElementById('resVisma').textContent = money(totalVisma);
+    document.getElementById('resAzar20').textContent = money(azar20Total);
+    document.getElementById('resAzar60').textContent = money(azar60Total);
+    document.getElementById('resControl').textContent = money(control);
+
+    document.getElementById('azar20Refri').textContent = money(azar20Refri);
+    document.getElementById('azar20Sueldo').textContent = money(azar20Sueldo);
+    document.getElementById('azar20Sac').textContent = money(azar20Sac);
+    document.getElementById('azar20Total').textContent = money(azar20Total);
+
+    document.getElementById('azar60Visma').textContent = money(totalVisma);
+    document.getElementById('azar60Menos20').textContent = '- ' + money(azar20Total);
+    document.getElementById('azar60Total').textContent = money(azar60Total);
+
+    document.getElementById('tblBaseRefri').textContent = money(baseRefri);
+    document.getElementById('tblBaseSueldo').textContent = money(baseSueldo);
+    document.getElementById('tblBaseSac').textContent = money(baseSac);
+    document.getElementById('tblPctRefri').textContent = pct(n('porcAzar20'));
+    document.getElementById('tblPctSueldo').textContent = pct(n('porcAzar20'));
+    document.getElementById('tblPctSac').textContent = pct(n('porcAzar20'));
+    document.getElementById('tblAzar20Refri').textContent = money(azar20Refri);
+    document.getElementById('tblAzar20Sueldo').textContent = money(azar20Sueldo);
+    document.getElementById('tblAzar20Sac').textContent = money(azar20Sac);
+    document.getElementById('tblAzar20Total').textContent = money(azar20Total);
+    document.getElementById('tblAzar60Total').textContent = money(azar60Total);
+    document.getElementById('tblControl').textContent = money(control);
+
+    document.getElementById('printAgente').textContent = document.getElementById('agente').value || '';
+    document.getElementById('printPeriodo').textContent = document.getElementById('periodo').value || '';
+
+    const alert = document.getElementById('alertBox');
+    if(totalVisma <= 0){
+      alert.className = 'alert warn';
+      alert.textContent = 'Cargar Total VISMA para calcular correctamente la cuota del 60% por diferencia.';
+    } else if(azar60Total < 0){
+      alert.className = 'alert danger';
+      alert.textContent = 'Atención: la cuota del 60% da negativa. Revisar Total VISMA o los importes cargados para la cuota del 20%.';
+    } else {
+      alert.className = 'alert ok';
+      alert.textContent = 'Control correcto: cuota 20% + cuota 60% coincide con Total VISMA.';
+    }
+
+    return {baseRefri,baseSueldo,baseSac,azar20Refri,azar20Sueldo,azar20Sac,azar20Total,azar60Total,totalVisma,control};
+  }
+
+  function exportCSV(){
+    const r = calc();
+    const rows = [
+      ['Agente', document.getElementById('agente').value],
+      ['Periodo', document.getElementById('periodo').value],
+      ['Total VISMA', r.totalVisma],
+      ['Base refrigerio', r.baseRefri],
+      ['Cuota 20 refrigerio', r.azar20Refri],
+      ['Base sueldo', r.baseSueldo],
+      ['Cuota 20 sueldo', r.azar20Sueldo],
+      ['Base SAC', r.baseSac],
+      ['Cuota 20 SAC', r.azar20Sac],
+      ['Total cuota 20', r.azar20Total],
+      ['Total cuota 60 por diferencia', r.azar60Total],
+      ['Control cuota 20 + cuota 60', r.control]
+    ];
+    const csv = rows.map(row => row.map(x => `"${String(x).replaceAll('"','""')}"`).join(';')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'calculo_cuotas_braga.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function resetDemo(){
+    document.getElementById('agente').value = 'BRAGA';
+    document.getElementById('periodo').value = '';
+    document.getElementById('totalVisma').value = '2505583';
+    document.getElementById('porcAzar20').value = '20';
+    document.getElementById('refrigerio').value = '221337';
+    document.getElementById('sueldoBruto').value = '3455893.96';
+    document.getElementById('sueldoDesc').value = '30.5';
+    document.getElementById('sueldoNoRem').value = '1118609.63';
+    document.getElementById('sueldoSeguro').value = '4457.80';
+    document.getElementById('sueldoAfipResta').value = '0';
+    document.getElementById('sueldoAfipSuma').value = '0';
+    document.getElementById('sacBruto').value = '0';
+    document.getElementById('sacDesc').value = '30.5';
+    document.getElementById('sacNoRem').value = '0';
+    document.getElementById('sacSeguro').value = '0';
+    document.getElementById('sacAfipResta').value = '0';
+    document.getElementById('sacAfipSuma').value = '0';
+    calc();
+  }
+
+  ids.forEach(id => document.getElementById(id).addEventListener('input', calc));
+  calc();
+</script>
+</body>
+</html>

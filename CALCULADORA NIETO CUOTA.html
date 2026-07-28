@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Cuotas Alimentarias - NIETO</title>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --ink:#1f2937;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --ok:#047857;
+      --warn:#b45309;
+      --danger:#b91c1c;
+      --soft:#f9fafb;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+    }
+    header{
+      background:linear-gradient(135deg,#1e3a8a,#2563eb);
+      color:white;
+      padding:28px 22px;
+    }
+    header h1{margin:0 0 6px;font-size:26px}
+    header p{margin:0;opacity:.92}
+    main{max-width:1180px;margin:0 auto;padding:22px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:18px;
+      box-shadow:0 4px 14px rgba(15,23,42,.06);
+    }
+    .span-12{grid-column:span 12}
+    .span-8{grid-column:span 8}
+    .span-6{grid-column:span 6}
+    .span-4{grid-column:span 4}
+    .span-3{grid-column:span 3}
+    @media(max-width:900px){
+      .span-8,.span-6,.span-4,.span-3{grid-column:span 12}
+    }
+    h2{font-size:18px;margin:0 0 12px}
+    h3{font-size:16px;margin:0 0 10px}
+    .subtitle{color:var(--muted);font-size:13px;margin:4px 0 14px}
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+    }
+    @media(max-width:900px){.summary{grid-template-columns:1fr}}
+    .pill{
+      background:var(--soft);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+    }
+    .pill .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+    .pill .value{font-size:22px;font-weight:700;margin-top:6px}
+    .pill.accent{background:var(--accent-soft);border-color:#bfdbfe}
+    .pill.ok{background:#ecfdf5;border-color:#a7f3d0}
+    .pill.warn{background:#fffbeb;border-color:#fde68a}
+    label{
+      display:block;
+      font-size:13px;
+      color:#374151;
+      margin-bottom:6px;
+      font-weight:600;
+    }
+    input, select{
+      width:100%;
+      padding:10px 11px;
+      border:1px solid #cbd5e1;
+      border-radius:10px;
+      font-size:14px;
+      background:white;
+    }
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+    }
+    @media(max-width:650px){.form-grid{grid-template-columns:1fr}}
+    .field-note{font-size:12px;color:var(--muted);margin-top:4px}
+    .result-card{
+      border-radius:16px;
+      border:1px solid var(--line);
+      padding:16px;
+      background:#fff;
+    }
+    .result-card h3{display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .badge{
+      font-size:12px;
+      background:var(--accent-soft);
+      color:#1e40af;
+      padding:5px 9px;
+      border-radius:999px;
+      white-space:nowrap;
+    }
+    .rows{margin-top:10px;border-top:1px solid var(--line)}
+    .row{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 0;
+      border-bottom:1px solid var(--line);
+      font-size:14px;
+    }
+    .row strong{font-size:16px}
+    .formula{
+      margin-top:12px;
+      padding:10px;
+      border-radius:12px;
+      background:#f8fafc;
+      border:1px dashed #cbd5e1;
+      color:#475569;
+      font-size:13px;
+      line-height:1.45;
+    }
+    .alert{
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid;
+      margin-top:12px;
+      font-size:14px;
+    }
+    .alert.ok{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
+    .alert.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
+    .alert.danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+    details{
+      background:white;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 14px;
+    }
+    summary{cursor:pointer;font-weight:700}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+      font-size:14px;
+    }
+    th,td{
+      border-bottom:1px solid var(--line);
+      text-align:right;
+      padding:10px 8px;
+    }
+    th:first-child,td:first-child{text-align:left}
+    th{background:#f8fafc;color:#475569}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    button{
+      border:0;
+      background:var(--accent);
+      color:white;
+      padding:11px 14px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    button.secondary{background:#475569}
+    button.light{background:#e5e7eb;color:#111827}
+    .print-only{display:none}
+    @media print{
+      header,.inputs,.actions,details{display:none!important}
+      body{background:white}
+      main{max-width:none;padding:0}
+      .card{box-shadow:none;border:0;border-radius:0}
+      .print-only{display:block}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Calculadora de Cuotas Alimentarias - NIETO</h1>
+    <p>Lógica corregida: se calcula GLERIA y GÓMEZ surge por diferencia contra Total VISMA.</p>
+  </header>
+
+  <main>
+    <section class="grid">
+      <div class="card span-12">
+        <h2>Resumen</h2>
+        <div class="summary">
+          <div class="pill accent">
+            <div class="label">Total VISMA informado</div>
+            <div class="value" id="resVisma">$ 0,00</div>
+          </div>
+          <div class="pill ok">
+            <div class="label">Total GLERIA calculado</div>
+            <div class="value" id="resGleria">$ 0,00</div>
+          </div>
+          <div class="pill warn">
+            <div class="label">GÓMEZ por diferencia</div>
+            <div class="value" id="resGomez">$ 0,00</div>
+          </div>
+          <div class="pill">
+            <div class="label">Control</div>
+            <div class="value" id="resControl">$ 0,00</div>
+          </div>
+        </div>
+        <div id="alertBox" class="alert ok"></div>
+      </div>
+
+      <div class="card span-4 inputs">
+        <h2>Datos generales</h2>
+        <div class="form-grid">
+          <div>
+            <label>Agente</label>
+            <input id="agente" value="NIETO" />
+          </div>
+          <div>
+            <label>Período</label>
+            <input id="periodo" placeholder="Ej.: Mayo 2026" />
+          </div>
+          <div>
+            <label>Total VISMA</label>
+            <input id="totalVisma" type="number" step="0.01" value="1812798.55" />
+            <div class="field-note">Monto total desde VISMA para calcular GÓMEZ por diferencia.</div>
+          </div>
+          <div>
+            <label>Porcentaje GLERIA</label>
+            <input id="porcGleria" type="number" step="0.01" value="26" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card span-4 inputs">
+        <h2>Concepto no remunerativo / Refrigerio</h2>
+        <p class="subtitle">GLERIA toma el 26% directo del monto cargado en este concepto.</p>
+        <div class="form-grid">
+          <div>
+            <label>No remunerativo / refrigerio</label>
+            <input id="refriNoRem" type="number" step="0.01" value="215348" />
+          </div>
+          <div>
+            <label>Total calculado al 26%</label>
+            <input id="refriTotal26" type="text" value="$ 0,00" readonly />
+            <div class="field-note">Resultado automático: no remunerativo/refrigerio × 26%.</div>
+          </div>
+        </div>
+        <div class="formula">
+          Refrigerio GLERIA = No remunerativo / refrigerio × 26%.
+        </div>
+      </div>
+
+      <div class="card span-4 inputs">
+        <h2>Sueldo</h2>
+        <p class="subtitle">Base sueldo: remunerativo neto + no remunerativo, con AFIP separado en suma/resta.</p>
+        <div class="form-grid">
+          <div>
+            <label>Bruto remunerativo</label>
+            <input id="sueldoBruto" type="number" step="0.01" value="2578117.73" />
+          </div>
+          <div>
+            <label>Descuento %</label>
+            <input id="sueldoDesc" type="number" step="0.01" value="28.5" />
+          </div>
+          <div>
+            <label>No remunerativo</label>
+            <input id="sueldoNoRem" type="number" step="0.01" value="1111269.10" />
+          </div>
+          <div>
+            <label>Seguro de vida</label>
+            <input id="sueldoSeguro" type="number" step="0.01" value="4457.80" />
+          </div>
+          <div>
+            <label>AFIP que resta</label>
+            <input id="sueldoAfipResta" type="number" step="0.01" value="0" />
+          </div>
+          <div>
+            <label>AFIP que suma</label>
+            <input id="sueldoAfipSuma" type="number" step="0.01" value="303182.81" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card span-6 inputs">
+        <h2>SAC / adicional eventual</h2>
+        <p class="subtitle">Opcional. Si no corresponde, dejar en cero.</p>
+        <div class="form-grid">
+          <div>
+            <label>SAC bruto remunerativo</label>
+            <input id="sacBruto" type="number" step="0.01" value="0" />
+          </div>
+          <div>
+            <label>Descuento SAC %</label>
+            <input id="sacDesc" type="number" step="0.01" value="28.5" />
+          </div>
+          <div>
+            <label>SAC no remunerativo</label>
+            <input id="sacNoRem" type="number" step="0.01" value="0" />
+          </div>
+          <div>
+            <label>Seguro SAC</label>
+            <input id="sacSeguro" type="number" step="0.01" value="0" />
+          </div>
+          <div>
+            <label>AFIP SAC que resta</label>
+            <input id="sacAfipResta" type="number" step="0.01" value="0" />
+          </div>
+          <div>
+            <label>AFIP SAC que suma</label>
+            <input id="sacAfipSuma" type="number" step="0.01" value="0" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card span-6">
+        <h2>Regla protegida</h2>
+        <div class="formula">
+          <strong>GLERIA</strong> = 26% del concepto no remunerativo/refrigerio + 26% del sueldo + 26% del SAC si corresponde.<br><br>
+          <strong>GÓMEZ</strong> = Total VISMA - Total GLERIA.<br><br>
+          La app no calcula GÓMEZ por 28%. El porcentaje 28% queda fuera de esta lógica corregida.
+        </div>
+      </div>
+
+      <div class="card span-6">
+        <div class="result-card">
+          <h3>GLERIA <span class="badge">26% calculado</span></h3>
+          <div class="rows">
+            <div class="row"><span>Refrigerio / no remunerativo</span><strong id="gleriaRefri">$ 0,00</strong></div>
+            <div class="row"><span>Sueldo</span><strong id="gleriaSueldo">$ 0,00</strong></div>
+            <div class="row"><span>SAC / adicional</span><strong id="gleriaSac">$ 0,00</strong></div>
+            <div class="row"><span>Total GLERIA</span><strong id="gleriaTotal">$ 0,00</strong></div>
+          </div>
+          <div class="formula">
+            Total GLERIA = (base refrigerio × 26%) + (base sueldo × 26%) + (base SAC × 26%).
+          </div>
+        </div>
+      </div>
+
+      <div class="card span-6">
+        <div class="result-card">
+          <h3>GÓMEZ <span class="badge">por diferencia</span></h3>
+          <div class="rows">
+            <div class="row"><span>Total VISMA</span><strong id="gomezVisma">$ 0,00</strong></div>
+            <div class="row"><span>Menos total GLERIA</span><strong id="gomezMenosGleria">$ 0,00</strong></div>
+            <div class="row"><span>Total GÓMEZ</span><strong id="gomezTotal">$ 0,00</strong></div>
+          </div>
+          <div class="formula">
+            GÓMEZ = Total VISMA - Total GLERIA.
+          </div>
+        </div>
+      </div>
+
+      <div class="card span-12">
+        <details open>
+          <summary>Ver detalle de bases de cálculo</summary>
+          <table>
+            <thead>
+              <tr>
+                <th>Concepto</th>
+                <th>Base</th>
+                <th>% GLERIA</th>
+                <th>Resultado GLERIA</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Refrigerio / no remunerativo</td>
+                <td id="tblBaseRefri">$ 0,00</td>
+                <td id="tblPctRefri">26%</td>
+                <td id="tblGleriaRefri">$ 0,00</td>
+              </tr>
+              <tr>
+                <td>Sueldo</td>
+                <td id="tblBaseSueldo">$ 0,00</td>
+                <td id="tblPctSueldo">26%</td>
+                <td id="tblGleriaSueldo">$ 0,00</td>
+              </tr>
+              <tr>
+                <td>SAC / adicional</td>
+                <td id="tblBaseSac">$ 0,00</td>
+                <td id="tblPctSac">26%</td>
+                <td id="tblGleriaSac">$ 0,00</td>
+              </tr>
+              <tr>
+                <th>Total GLERIA</th>
+                <th></th>
+                <th></th>
+                <th id="tblGleriaTotal">$ 0,00</th>
+              </tr>
+              <tr>
+                <th>GÓMEZ por diferencia</th>
+                <th colspan="2">Total VISMA - Total GLERIA</th>
+                <th id="tblGomezTotal">$ 0,00</th>
+              </tr>
+            </tbody>
+          </table>
+        </details>
+
+        <div class="actions">
+          <button onclick="window.print()">Imprimir reporte</button>
+          <button class="secondary" onclick="exportCSV()">Exportar CSV</button>
+          <button class="light" onclick="resetDemo()">Restaurar valores de la planilla</button>
+        </div>
+      </div>
+
+      <div class="card span-12 print-only">
+        <h2>Reporte imprimible - NIETO</h2>
+        <p><strong>Agente:</strong> <span id="printAgente"></span></p>
+        <p><strong>Período:</strong> <span id="printPeriodo"></span></p>
+      </div>
+    </section>
+  </main>
+
+<script>
+  const ids = [
+    'agente','periodo','totalVisma','porcGleria',
+    'refriNoRem',
+    'sueldoBruto','sueldoDesc','sueldoNoRem','sueldoSeguro','sueldoAfipResta','sueldoAfipSuma',
+    'sacBruto','sacDesc','sacNoRem','sacSeguro','sacAfipResta','sacAfipSuma'
+  ];
+
+  function n(id){
+    const el = document.getElementById(id);
+    const v = parseFloat(el.value);
+    return isNaN(v) ? 0 : v;
+  }
+
+  function money(v){
+    return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(v || 0);
+  }
+
+  function pct(v){
+    return (v || 0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:2}) + '%';
+  }
+
+  function calc(){
+    const p = n('porcGleria') / 100;
+    const totalVisma = n('totalVisma');
+
+    const baseRefri = n('refriNoRem');
+
+    const sueldoRemNeto = n('sueldoBruto') - (n('sueldoBruto') * n('sueldoDesc') / 100);
+    const baseSueldo = sueldoRemNeto + n('sueldoNoRem') - n('sueldoSeguro') - n('sueldoAfipResta') + n('sueldoAfipSuma');
+
+    const sacRemNeto = n('sacBruto') - (n('sacBruto') * n('sacDesc') / 100);
+    const baseSac = sacRemNeto + n('sacNoRem') - n('sacSeguro') - n('sacAfipResta') + n('sacAfipSuma');
+
+    const gRefri = baseRefri * p;
+    const gSueldo = baseSueldo * p;
+    const gSac = baseSac * p;
+    const gTotal = gRefri + gSueldo + gSac;
+
+    const gomez = totalVisma - gTotal;
+    const control = gTotal + gomez;
+
+    document.getElementById('resVisma').textContent = money(totalVisma);
+    document.getElementById('resGleria').textContent = money(gTotal);
+    document.getElementById('resGomez').textContent = money(gomez);
+    document.getElementById('resControl').textContent = money(control);
+
+    document.getElementById('refriTotal26').value = money(gRefri);
+    document.getElementById('gleriaRefri').textContent = money(gRefri);
+    document.getElementById('gleriaSueldo').textContent = money(gSueldo);
+    document.getElementById('gleriaSac').textContent = money(gSac);
+    document.getElementById('gleriaTotal').textContent = money(gTotal);
+
+    document.getElementById('gomezVisma').textContent = money(totalVisma);
+    document.getElementById('gomezMenosGleria').textContent = '- ' + money(gTotal);
+    document.getElementById('gomezTotal').textContent = money(gomez);
+
+    document.getElementById('tblBaseRefri').textContent = money(baseRefri);
+    document.getElementById('tblBaseSueldo').textContent = money(baseSueldo);
+    document.getElementById('tblBaseSac').textContent = money(baseSac);
+    document.getElementById('tblPctRefri').textContent = pct(n('porcGleria'));
+    document.getElementById('tblPctSueldo').textContent = pct(n('porcGleria'));
+    document.getElementById('tblPctSac').textContent = pct(n('porcGleria'));
+    document.getElementById('tblGleriaRefri').textContent = money(gRefri);
+    document.getElementById('tblGleriaSueldo').textContent = money(gSueldo);
+    document.getElementById('tblGleriaSac').textContent = money(gSac);
+    document.getElementById('tblGleriaTotal').textContent = money(gTotal);
+    document.getElementById('tblGomezTotal').textContent = money(gomez);
+
+    document.getElementById('printAgente').textContent = document.getElementById('agente').value || '';
+    document.getElementById('printPeriodo').textContent = document.getElementById('periodo').value || '';
+
+    const alert = document.getElementById('alertBox');
+    const diff = Math.abs(totalVisma - control);
+    if(totalVisma <= 0){
+      alert.className = 'alert warn';
+      alert.textContent = 'Cargar Total VISMA para calcular correctamente GÓMEZ por diferencia.';
+    } else if(gomez < 0){
+      alert.className = 'alert danger';
+      alert.textContent = 'Atención: GÓMEZ da negativo. Revisar Total VISMA o los importes cargados para GLERIA.';
+    } else {
+      alert.className = 'alert ok';
+      alert.textContent = 'Control correcto: GLERIA + GÓMEZ coincide con Total VISMA.';
+    }
+
+    return {baseRefri,baseSueldo,baseSac,gRefri,gSueldo,gSac,gTotal,gomez,totalVisma,control};
+  }
+
+  function exportCSV(){
+    const r = calc();
+    const rows = [
+      ['Agente', document.getElementById('agente').value],
+      ['Periodo', document.getElementById('periodo').value],
+      ['Total VISMA', r.totalVisma],
+      ['Base refrigerio/no remunerativo GLERIA', r.baseRefri],
+      ['GLERIA refrigerio/no remunerativo', r.gRefri],
+      ['Base sueldo', r.baseSueldo],
+      ['GLERIA sueldo', r.gSueldo],
+      ['Base SAC', r.baseSac],
+      ['GLERIA SAC', r.gSac],
+      ['Total GLERIA', r.gTotal],
+      ['GOMEZ por diferencia', r.gomez],
+      ['Control GLERIA + GOMEZ', r.control]
+    ];
+    const csv = rows.map(row => row.map(x => `"${String(x).replaceAll('"','""')}"`).join(';')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'calculo_cuotas_nieto.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function resetDemo(){
+    document.getElementById('agente').value = 'NIETO';
+    document.getElementById('periodo').value = '';
+    document.getElementById('totalVisma').value = '1812798.55';
+    document.getElementById('porcGleria').value = '26';
+    document.getElementById('refriNoRem').value = '215348';
+    document.getElementById('sueldoBruto').value = '2578117.73';
+    document.getElementById('sueldoDesc').value = '28.5';
+    document.getElementById('sueldoNoRem').value = '1111269.10';
+    document.getElementById('sueldoSeguro').value = '4457.80';
+    document.getElementById('sueldoAfipResta').value = '0';
+    document.getElementById('sueldoAfipSuma').value = '303182.81';
+    document.getElementById('sacBruto').value = '0';
+    document.getElementById('sacDesc').value = '28.5';
+    document.getElementById('sacNoRem').value = '0';
+    document.getElementById('sacSeguro').value = '0';
+    document.getElementById('sacAfipResta').value = '0';
+    document.getElementById('sacAfipSuma').value = '0';
+    calc();
+  }
+
+  ids.forEach(id => document.getElementById(id).addEventListener('input', calc));
+  calc();
+</script>
+</body>
+</html>

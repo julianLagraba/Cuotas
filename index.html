@@ -1,0 +1,2023 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distribución de Cuotas Alimentarias</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f0ede8;
+    --surface: #ffffff;
+    --surface2: #f7f4f0;
+    --border: #d8d2c8;
+    --accent: #1a5276;
+    --accent2: #c0392b;
+    --accent3: #1e8449;
+    --text: #1a1a1a;
+    --text2: #555;
+    --text3: #888;
+    --smvm: #7d3c98;
+    --warn: #e67e22;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  header {
+    background: var(--accent);
+    color: white;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header h1 { font-size: 18px; font-weight: 600; letter-spacing: 0.02em; }
+  header p { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+  .header-badge {
+    margin-left: auto;
+    background: rgba(255,255,255,0.15);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .smvm-bar {
+    background: var(--smvm);
+    color: white;
+    padding: 8px 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 13px;
+  }
+  .smvm-bar label { opacity: 0.85; }
+  .smvm-bar input {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    width: 140px;
+  }
+  .smvm-bar input::placeholder { color: rgba(255,255,255,0.5); }
+  .smvm-bar span { font-family: 'IBM Plex Mono', monospace; font-size: 12px; opacity: 0.8; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 112px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .sidebar-header h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 8px; }
+  .search-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    background: white;
+  }
+  .search-input:focus { outline: none; border-color: var(--accent); }
+
+  .agent-list { flex: 1; overflow-y: auto; }
+  .agent-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .agent-item:hover { background: var(--surface2); }
+  .agent-item.active { background: #e8f0f8; border-left: 3px solid var(--accent); }
+  .agent-name { font-weight: 500; font-size: 13px; }
+  .agent-dni { font-size: 11px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; }
+  .agent-bens { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* MAIN */
+  .main { padding: 24px 28px; overflow-y: auto; }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 20px; overflow: hidden; box-shadow: var(--shadow); }
+  .panel-header { padding: 14px 20px; background: var(--surface2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .panel-header h2 { font-size: 14px; font-weight: 600; }
+  .panel-num { width: 24px; height: 24px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+  .panel-body { padding: 20px; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+  .field-group label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); font-weight: 500; }
+  .field-group input, .field-group select {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    background: white;
+    transition: border-color 0.15s;
+  }
+  .field-group input:focus, .field-group select:focus { outline: none; border-color: var(--accent); }
+  .field-hint { font-size: 11px; color: var(--text3); line-height: 1.4; }
+
+  /* BENEFICIARIAS TABLE */
+  .ben-table { width: 100%; border-collapse: collapse; }
+  .ben-table th {
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--border);
+    background: var(--surface2);
+  }
+  .ben-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .ben-table tr:last-child td { border-bottom: none; }
+  .ben-table input[type="number"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+  .ben-table input[type="text"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+  }
+  .regla-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .badge-pct { background: #d4e6f1; color: #1a5276; }
+  .badge-smvm { background: #e8daef; color: #7d3c98; }
+  .badge-fijo { background: #d5f5e3; color: #1e8449; }
+
+  .import-tools {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .file-label {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .file-label input { display: none; }
+  .import-tools button {
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: white;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+  }
+  .import-tools button:hover, .file-label:hover { background: rgba(255,255,255,0.28); }
+  #importStatus { min-width: 170px; text-align: right; }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.42);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 24px;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    width: min(760px, 100%);
+    max-height: 90vh;
+    overflow: auto;
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 14px 40px rgba(0,0,0,0.24);
+  }
+  .modal-header {
+    padding: 16px 18px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .modal-header h2 { font-size: 15px; margin-right: auto; }
+  .modal-body { padding: 18px; }
+  .modal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+  .preview-box {
+    margin-top: 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .preview-box table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .preview-box th, .preview-box td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: left; }
+  .preview-box th { background: var(--surface2); color: var(--text2); }
+  .danger-link {
+    background: transparent;
+    border: none;
+    color: var(--accent2);
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    padding: 0;
+  }
+  .agent-actions { margin-left: auto; display: flex; gap: 8px; }
+  .ben-table .action-cell { width: 82px; text-align: right; }
+  .floor-note { color: var(--smvm); font-family: 'IBM Plex Mono', monospace; font-size: 11px; display: block; margin-top: 3px; }
+  .warn-msg { margin-top: 12px; padding: 10px 12px; border: 1px solid #f5c16c; background: #fff6e6; color: #8a5300; border-radius: 6px; font-size: 13px; }
+  .adj-note { color: var(--smvm); font-size: 11px; display: block; margin-top: 4px; }
+  .vega-box { margin-top: 14px; padding: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface2); }
+  .vega-box h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text2); margin: 0 0 12px; }
+  .vega-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .vega-note { margin-top: 10px; font-size: 12px; color: var(--text2); line-height: 1.4; }
+  .calc-subtitle { grid-column: 1 / -1; margin: 8px 0 0; padding-top: 10px; border-top: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); font-weight: 600; }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .btn {
+    padding: 9px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #154360; }
+  .btn-success { background: var(--accent3); color: white; }
+  .btn-success:hover { background: #145a32; }
+  .btn-outline { background: white; color: var(--accent); border: 1px solid var(--accent); }
+  .btn-outline:hover { background: #e8f0f8; }
+  .btn-danger { background: var(--accent2); color: white; }
+  .btn-danger:hover { background: #922b21; }
+  .btn-warn { background: var(--warn); color: white; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* REPORTE */
+  .reporte {
+    font-family: 'IBM Plex Sans', sans-serif;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .rep-header {
+    background: var(--accent);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .rep-header h3 { font-size: 15px; font-weight: 600; }
+  .rep-header p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+  .rep-meta { text-align: right; font-size: 12px; opacity: 0.8; }
+  .rep-agent {
+    background: #e8f0f8;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+  .rep-agent strong { color: var(--accent); }
+  .rep-table { width: 100%; border-collapse: collapse; }
+  .rep-table th {
+    background: var(--surface2);
+    padding: 9px 12px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    border-bottom: 2px solid var(--border);
+  }
+  .rep-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .rep-table .money { font-family: 'IBM Plex Mono', monospace; text-align: right; }
+  .rep-table tfoot td { font-weight: 600; background: var(--surface2); border-top: 2px solid var(--border); }
+  .rep-footer { padding: 10px 20px; font-size: 11px; color: var(--text3); border-top: 1px solid var(--border); }
+
+  .error-msg { background: #fdecea; border: 1px solid #e74c3c; color: #c0392b; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; }
+  .ok-msg { background: #d5f5e3; border: 1px solid #27ae60; color: #1e8449; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; }
+  .warn-msg { background: #fef9e7; border: 1px solid var(--warn); color: #784212; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; }
+
+  .no-agent { display: flex; align-items: center; justify-content: center; height: 300px; color: var(--text3); flex-direction: column; gap: 10px; }
+  .no-agent svg { opacity: 0.3; }
+
+  .control-total {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    padding: 12px 20px;
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .control-item span { color: var(--text3); }
+  .control-item strong { font-family: 'IBM Plex Mono', monospace; }
+  .control-ok { color: var(--accent3); }
+  .control-bad { color: var(--accent2); }
+
+  @media print {
+    header, .smvm-bar, .sidebar, .panel:not(.rep-panel), .btn-row { display: none !important; }
+    .layout { display: block; }
+    .main { padding: 0; }
+    .panel.rep-panel { border: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Distribución de Cuotas Alimentarias</h1>
+    <p>Municipalidad · Reparto mensual para carga manual en sistema de depósito</p>
+  </div>
+  <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+    <div class="header-badge" id="periodoBadge">mayo de 2026</div>
+    <button type="button" class="btn btn-sm btn-outline" id="logoutBtn" style="color: white; border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.15);">Cerrar Sesión</button>
+  </div>
+</header>
+
+<div class="smvm-bar">
+  <label>SMVM vigente: $</label>
+  <input type="text" inputmode="decimal" id="smvmInput" placeholder="Ej: 268056" value="">
+  <span id="smvmCalc"></span>
+  <div class="import-tools">
+    <label class="file-label">Importar Excel
+      <input type="file" id="excelInput" accept=".xlsx,.xls">
+    </label>
+    <button type="button" id="exportGeneralBtn">Exportar general</button>
+    <button type="button" id="resetBaseBtn">Base original</button>
+    <span id="importStatus"></span>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="importMapModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Campos para importar desde Excel</h2>
+      <button type="button" class="danger-link" id="closeImportMapBtn">Cerrar</button>
+    </div>
+    <div class="modal-body" id="importMapBody"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="loginModal" style="z-index: 1000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
+  <div class="modal" style="width: min(420px, 90%); border-radius: 10px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);">
+    <div class="modal-header" style="background: var(--accent); color: white; border-radius: 10px 10px 0 0; padding: 18px 20px;">
+      <h2 style="font-size: 16px; color: white; font-weight: 600;">Acceso al Sistema</h2>
+    </div>
+    <div class="modal-body" style="padding: 24px;">
+      <p style="font-size: 13px; color: var(--text2); margin-bottom: 16px; line-height: 1.5;">
+        Ingresá la clave de acceso para utilizar la calculadora de cuotas alimentarias.
+      </p>
+      <form id="loginForm" onsubmit="return false;">
+        <div class="field-group" style="margin-bottom: 14px;">
+          <label for="loginPass" style="font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em;">Contraseña</label>
+          <input type="password" id="loginPass" placeholder="Ingresá la clave..." autocomplete="current-password" autofocus style="width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;">
+        </div>
+        <div id="loginError" class="error-msg" style="display: none; margin-bottom: 14px; font-size: 12px; padding: 8px 12px;">
+          Clave incorrecta. Intentá nuevamente.
+        </div>
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 10px; font-size: 14px; font-weight: 600;">Ingresar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h3>Agentes</h3>
+      <input type="text" class="search-input" id="searchInput" placeholder="Buscar por nombre o DNI...">
+    </div>
+    <div class="agent-list" id="agentList"></div>
+  </div>
+
+  <div class="main" id="mainArea">
+    <div class="no-agent">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <p>Seleccioná un agente para comenzar</p>
+    </div>
+  </div>
+</div>
+
+<script src="./xlsx.full.min.js"></script>
+<script>
+// ============================================================
+// BASE DE DATOS (cargada desde Excel)
+// ============================================================
+const BASE_INICIAL = [
+  {dni:"14154677", nombre:"PONCE JOSE OSVALDO", bens:[
+    {nombre:"Monjes", regla:"pct", valor:0.15, obs:""},
+    {nombre:"López", regla:"smvm", valor:35, obs:""}
+  ]},
+  {dni:"16904892", nombre:"ALVAREZ ENRIQUE OMAR", bens:[
+    {nombre:"Martinez V.", regla:"pct", valor:0.5, obs:""},
+    {nombre:"Martinez", regla:"pct", valor:0.3, obs:""}
+  ]},
+  {dni:"16947184", nombre:"AGUERO RENE A.", bens:[
+    {nombre:"Fraga", regla:"pct", valor:0.25, obs:"incluye asignaciones"},
+    {nombre:"Melone", regla:"pct", valor:0.2, obs:""}
+  ]},
+  {dni:"17159334", nombre:"ITURRIA CARLOS A.", bens:[
+    {nombre:"Perez", regla:"pct", valor:0.15, obs:""},
+    {nombre:"Celeste", regla:"pct", valor:0.4, obs:"incluye asign por 3 hijos"}
+  ]},
+  {dni:"17485196", nombre:"PALMA JORGE E.", bens:[
+    {nombre:"Córdoba", regla:"pct", valor:0.25, obs:""},
+    {nombre:"Correa", regla:"pct", valor:0.13, obs:""}
+  ]},
+  {dni:"18831609", nombre:"CARBALLO H. VICTOR A.", bens:[
+    {nombre:"Díaz B Rosario", regla:"pct", valor:0.3, obs:""},
+    {nombre:"Vara Romina", regla:"pct", valor:0.4, obs:""},
+    {nombre:"Novarino", regla:"pct", valor:0.36, obs:""}
+  ]},
+  {dni:"20224506", nombre:"LUZARA JORGE ALBERTO", bens:[
+    {nombre:"Derencia", regla:"pct", valor:0.35, obs:"1 asign + 1 asign disc"},
+    {nombre:"Flores", regla:"pct", valor:0.17, obs:""}
+  ]},
+  {dni:"20657908", nombre:"BRAGA HECTOR MARIA", bens:[
+    {nombre:"Azar Mirta (1)", regla:"pct", valor:0.6, obs:""},
+    {nombre:"Azar Mirta (2)", regla:"pct", valor:0.2, obs:""}
+  ]},
+  {dni:"20749201", nombre:"CIVERA GABRIEL", bens:[
+    {nombre:"Moyano", regla:"smvm", valor:120, obs:""},
+    {nombre:"Ludueña", regla:"smvm", valor:30, obs:""}
+  ]},
+  {dni:"21628129", nombre:"DANTUR ENRIQUE A.", bens:[
+    {nombre:"Romero", regla:"pct", valor:0.15, obs:""},
+    {nombre:"Galaverna", regla:"pct", valor:0.2, obs:""}
+  ]},
+  {dni:"21754794", nombre:"FRAGA JUAN CARLOS", bens:[
+    {nombre:"Maza", regla:"pct", valor:0.15, obs:""},
+    {nombre:"Imerso", regla:"pct", valor:0.65, obs:"1 asignacion"}
+  ]},
+  {dni:"23821709", nombre:"GALVAN ARIEL EDUARDO", bens:[
+    {nombre:"Marquez", regla:"pct", valor:0.6, obs:""},
+    {nombre:"Paredes", regla:"pct", valor:0.18, obs:""},
+    {nombre:"Banegas-MATIAS", regla:"pct", valor:0.11, obs:""},
+    {nombre:"Banegas-THIARA", regla:"pct", valor:0.11, obs:""}
+  ]},
+  {dni:"25268028", nombre:"HEREDIA CRISTIAN G.", bens:[
+    {nombre:"Bonfante", regla:"pct", valor:0.2, obs:""},
+    {nombre:"Caplan", regla:"pct", valor:0.2, obs:""},
+    {nombre:"Maurizio", regla:"pct", valor:0.125, obs:""}
+  ]},
+  {dni:"25759752", nombre:"CUASSOLO OSCAR", bens:[
+    {nombre:"CASTAÑO", regla:"pct", valor:0.2332, obs:""},
+    {nombre:"Julieta Cuassolo", regla:"pct", valor:0.1166, obs:""}
+  ]},
+  {dni:"25921075", nombre:"VIDELA JUAN MANUEL", bens:[
+    {nombre:"Moyano OP", regla:"pct", valor:0.22, obs:""},
+    {nombre:"Salas", regla:"pct", valor:0.12, obs:""}
+  ]},
+  {dni:"26158223", nombre:"FIMPEL GUILLERMO", bens:[
+    {nombre:"Gonzalez Bustos", regla:"pct", valor:0.35, obs:""},
+    {nombre:"Luna", regla:"pct", valor:0.2, obs:"1 asignacion"}
+  ]},
+  {dni:"26181919", nombre:"VEGA PABLO LUIS", bens:[
+    {nombre:"Reinoso", regla:"pct", valor:0.35, obs:""},
+    {nombre:"Coman", regla:"pct", valor:0.2, obs:"Excluye hs extras"},
+    {nombre:"fija", regla:"fijo", valor:250, obs:""},
+    {nombre:"Castillo B Nación", regla:"pct", valor:0.1, obs:""}
+  ]},
+  {dni:"26905412", nombre:"CERDA HEREDIA DIEGO", bens:[
+    {nombre:"S/DATOS", regla:"pct", valor:0.3, obs:""},
+    {nombre:"GALINDEZ", regla:"pct", valor:0.15, obs:""}
+  ]},
+  {dni:"27542971", nombre:"NIETO PABLO", bens:[
+    {nombre:"Gomez Claudia OP", regla:"pct", valor:0.28, obs:""},
+    {nombre:"Gleria Maria", regla:"pct", valor:0.26, obs:""}
+  ]},
+  {dni:"27654464", nombre:"CASALINO JAVIER D.", bens:[
+    {nombre:"VANAY", regla:"pct", valor:0.25, obs:""},
+    {nombre:"PEREYRA", regla:"pct", valor:0.2, obs:""}
+  ]},
+  {dni:"28270083", nombre:"MARTINEZ MAURO JESUS", bens:[
+    {nombre:"Tello B FRANCES", regla:"pct", valor:0.2, obs:""},
+    {nombre:"Albornoz", regla:"pct", valor:0.3, obs:""}
+  ]},
+  {dni:"28343470", nombre:"NORVERTO MIGUEL A.", bens:[
+    {nombre:"SANCHEZ B SANT", regla:"pct", valor:0.15, obs:""},
+    {nombre:"QUINTANILLA", regla:"pct", valor:0.16, obs:""}
+  ]},
+  {dni:"28655740", nombre:"BUSTAMANTE ARIEL G.", bens:[
+    {nombre:"Carrizo B Patag", regla:"pct", valor:0.3, obs:""},
+    {nombre:"Muñoz", regla:"pct", valor:0.18, obs:"piso minimo 50% SMVM"}
+  ]},
+  {dni:"29651071", nombre:"JUAREZ SERGIO ARIEL", bens:[
+    {nombre:"Cáceres 20%", regla:"pct", valor:0.2, obs:""},
+    {nombre:"Cáceres 5%", regla:"pct", valor:0.05, obs:""}
+  ]},
+  {dni:"29710238", nombre:"LEDESMA CARLOS MANUEL", bens:[
+    {nombre:"Monjes", regla:"pct", valor:0.28, obs:""},
+    {nombre:"López", regla:"pct", valor:0.16, obs:""}
+  ]},
+  {dni:"30658925", nombre:"RAMALLO CARLOS DANIEL", bens:[
+    {nombre:"Miranda", regla:"pct", valor:0.25, obs:""},
+    {nombre:"Bazan", regla:"pct", valor:0.2, obs:""}
+  ]},
+  {dni:"30734890", nombre:"PAEZ PABLO MATIAS", bens:[
+    {nombre:"Razzoti", regla:"pct", valor:0.2, obs:"1 asign simple"},
+    {nombre:"Quinteros", regla:"pct", valor:0.18, obs:"1 asign discapacidad"}
+  ]},
+  {dni:"30969812", nombre:"BRITOS HUGO OMAR", bens:[
+    {nombre:"Vivas", regla:"pct", valor:0.18, obs:""},
+    {nombre:"Toloza", regla:"pct", valor:0.25, obs:"piso minimo 90% SMVM"}
+  ]},
+  {dni:"31217650", nombre:"SA JORGE DAVID", bens:[
+    {nombre:"Bustos", regla:"pct", valor:0.25, obs:""},
+    {nombre:"Oviedo", regla:"pct", valor:0.15, obs:""},
+    {nombre:"Ponce", regla:"pct", valor:0.2, obs:""}
+  ]},
+  {dni:"32492521", nombre:"ROMERO CARLOS", bens:[
+    {nombre:"Barrera", regla:"pct", valor:0.2, obs:""},
+    {nombre:"Mansilla Gabriela", regla:"pct", valor:0.25, obs:""},
+    {nombre:"Rivero", regla:"pct", valor:0.2, obs:""}
+  ]},
+  {dni:"32623467", nombre:"ALMADA NESTOR", bens:[
+    {nombre:"Córdoba", regla:"pct", valor:0.3, obs:""},
+    {nombre:"Gónzalez", regla:"pct", valor:0.2, obs:""}
+  ]},
+  {dni:"32786426", nombre:"CHATARA DANIEL", bens:[
+    {nombre:"Ledesma", regla:"pct", valor:0.25, obs:""},
+    {nombre:"Olivera", regla:"pct", valor:0.18, obs:"piso minimo 50% SMVM"}
+  ]},
+  {dni:"33059419", nombre:"GIMENEZ NICOLAS MATIAS", bens:[
+    {nombre:"Pavez", regla:"pct", valor:0.2, obs:""},
+    {nombre:"Angel Nicolas", regla:"pct", valor:0.18, obs:""}
+  ]},
+  {dni:"33976754", nombre:"CEPEDA RODRIGO GABRIEL", bens:[
+    {nombre:"Cuello", regla:"pct", valor:0.15, obs:""},
+    {nombre:"Vivas", regla:"pct", valor:0.24, obs:""}
+  ]},
+  {dni:"34289838", nombre:"MELONE BETIANA PAOLA", bens:[
+    {nombre:"Acevedo", regla:"pct", valor:0.09, obs:""},
+    {nombre:"Murúa", regla:"pct", valor:0.7, obs:""}
+  ]},
+  {dni:"37108338", nombre:"DEL PICOLO FEDERICO", bens:[
+    {nombre:"Cordenos", regla:"pct", valor:0.25, obs:"Piso min 1 SMVM"},
+    {nombre:"Garcia", regla:"pct", valor:0.2, obs:""}
+  ]}
+];
+
+// ============================================================
+// STATE & AUTHENTICATION
+// ============================================================
+const CLAVE_ACCESO = "cuotas2026";
+let BASE = cargarBaseImportada();
+let smvm = 0;
+let agenteSel = null;
+let periodo = "mayo de 2026";
+let reportes = {}; // dni -> {periodo, filas, totales}
+let importPendiente = null;
+
+// Cargar datos guardados en LocalStorage
+try {
+  const saved = localStorage.getItem('cuotas_data');
+  if (saved) {
+    const d = JSON.parse(saved);
+    smvm = d.smvm || 0;
+    periodo = d.periodo || periodo;
+    reportes = d.reportes || {};
+  }
+} catch(e){}
+
+function guardar() {
+  try { localStorage.setItem('cuotas_data', JSON.stringify({smvm, periodo, reportes})); } catch(e){}
+}
+
+function verificarAutenticacion() {
+  const auth = sessionStorage.getItem('cuotas_auth');
+  const loginModal = document.getElementById('loginModal');
+  if (auth === 'true') {
+    if (loginModal) loginModal.classList.remove('show');
+  } else {
+    if (loginModal) loginModal.classList.add('show');
+    const passInput = document.getElementById('loginPass');
+    if (passInput) setTimeout(() => passInput.focus(), 100);
+  }
+}
+
+function procesarLogin() {
+  const input = document.getElementById('loginPass');
+  const errDiv = document.getElementById('loginError');
+  if (!input) return;
+  if (input.value.trim() === CLAVE_ACCESO) {
+    sessionStorage.setItem('cuotas_auth', 'true');
+    if (errDiv) errDiv.style.display = 'none';
+    input.value = '';
+    verificarAutenticacion();
+  } else {
+    if (errDiv) errDiv.style.display = 'block';
+    input.focus();
+  }
+}
+
+function cerrarSesion() {
+  sessionStorage.removeItem('cuotas_auth');
+  verificarAutenticacion();
+}
+
+// ============================================================
+// UTIL
+// ============================================================
+const fmt = n => (Math.abs(n) < 0.005 ? 0 : n).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const parseMoney = s => {
+  if (!s && s !== 0) return 0;
+  const raw = String(s).trim();
+  let clean = raw;
+  if (raw.includes(',')) {
+    clean = raw.replace(/\./g,'').replace(',','.');
+  } else if ((raw.match(/\./g) || []).length > 1) {
+    clean = raw.replace(/\./g,'');
+  }
+  return parseFloat(clean) || 0;
+};
+
+const BASE_IMPORT_KEY = 'cuotas_base_excel';
+
+function basePersonalizadaActual() {
+  try { return !!localStorage.getItem(BASE_IMPORT_KEY); } catch(e) { return false; }
+}
+
+function guardarBasePersonalizada(msg) {
+  BASE = aplicarPisosSmvm(BASE);
+  try { localStorage.setItem(BASE_IMPORT_KEY, JSON.stringify(BASE)); } catch(e) {}
+  agenteSel = null;
+  renderSidebar();
+  renderMain();
+  actualizarEstadoImportacion(msg || (BASE.length + ' agentes en base'));
+}
+
+
+
+function cargarBaseImportada() {
+  try {
+    const raw = localStorage.getItem(BASE_IMPORT_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return aplicarPisosSmvm(Array.isArray(parsed) && parsed.length ? parsed : BASE_INICIAL);
+  } catch(e) {
+    return aplicarPisosSmvm(BASE_INICIAL);
+  }
+}
+
+function normalizarTexto(s) {
+  return String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function parsePisoSmvm(obs) {
+  const text = normalizarTexto(obs);
+  if (!text.includes('piso') || !text.includes('smvm')) return 0;
+  const m = text.match(/piso\s*(?:min(?:imo)?)?\s*(\d+(?:[,.]\d+)?)\s*(%)?\s*smvm/);
+  if (!m) return 0;
+  const n = parseFloat(m[1].replace(',', '.')) || 0;
+  return m[2] ? n : (n <= 5 ? n * 100 : n);
+}
+
+function aplicarPisosSmvm(base) {
+  return base.map(a => ({
+    ...a,
+    bens: a.bens.map(b => {
+      const pisoSmvm = b.pisoSmvm || parsePisoSmvm(b.obs);
+      return pisoSmvm ? { ...b, pisoSmvm } : { ...b };
+    })
+  }));
+}
+
+function parseReglaExcel(valor, obs) {
+  if (typeof valor === 'number') return { regla: 'pct', valor: valor > 1 ? valor / 100 : valor };
+  const raw = String(valor || '').trim();
+  const text = normalizarTexto(raw);
+  const num = parseFloat(raw.replace(/[^0-9,.-]/g, '').replace(',', '.')) || 0;
+  if (text.includes('smvm')) return { regla: 'smvm', valor: num };
+  if (text.includes('$') || text.includes('fijo')) return { regla: 'fijo', valor: num };
+  if (text.includes('%')) return { regla: 'pct', valor: num / 100 };
+  return { regla: 'pct', valor: num > 1 ? num / 100 : num };
+}
+
+function excelRowsABase(rows, campos) {
+  const porDni = new Map();
+  rows.forEach(row => {
+    const dni = String(row[campos.dni] || '').replace(/\D/g, '');
+    const nombre = String(row[campos.agente] || '').trim();
+    const beneficiaria = String(row[campos.beneficiaria] || '').trim();
+    const reglaRaw = row[campos.regla] ?? '';
+    const obs = campos.obs ? String(row[campos.obs] || '').trim() : '';
+    if (!dni || !nombre || !beneficiaria || reglaRaw === '') return;
+    const regla = parseReglaExcel(reglaRaw, obs);
+    const ben = { nombre: beneficiaria, regla: regla.regla, valor: regla.valor, obs };
+    const pisoSmvm = parsePisoSmvm(obs);
+    if (pisoSmvm) ben.pisoSmvm = pisoSmvm;
+    if (!porDni.has(dni)) porDni.set(dni, { dni, nombre, bens: [] });
+    porDni.get(dni).bens.push(ben);
+  });
+  return aplicarPisosSmvm(Array.from(porDni.values()));
+}
+
+function beneficiariaKey(b) {
+  return [
+    normalizarTexto(b.nombre),
+    b.regla,
+    Number(b.valor || 0).toFixed(6),
+    normalizarTexto(b.obs)
+  ].join('|');
+}
+
+function anexarBaseImportada(nuevaBase) {
+  let agentesNuevos = 0;
+  let beneficiariasNuevas = 0;
+
+  nuevaBase.forEach(importado => {
+    const existente = BASE.find(a => a.dni === importado.dni);
+    if (!existente) {
+      BASE.push(importado);
+      agentesNuevos++;
+      beneficiariasNuevas += importado.bens.length;
+      return;
+    }
+
+    if (!existente.nombre && importado.nombre) existente.nombre = importado.nombre;
+    const yaCargadas = new Set(existente.bens.map(beneficiariaKey));
+    importado.bens.forEach(b => {
+      const key = beneficiariaKey(b);
+      if (yaCargadas.has(key)) return;
+      existente.bens.push(b);
+      yaCargadas.add(key);
+      beneficiariasNuevas++;
+    });
+  });
+
+  return { agentesNuevos, beneficiariasNuevas };
+}
+
+function actualizarEstadoImportacion(msg) {
+  const el = document.getElementById('importStatus');
+  if (el) el.textContent = msg || (basePersonalizadaActual() ? BASE.length + ' agentes en base' : 'Base original');
+}
+
+function detectarCampo(headers, candidatos) {
+  const exacto = headers.find(h => candidatos.includes(normalizarTexto(h)));
+  if (exacto) return exacto;
+  return headers.find(h => candidatos.some(c => normalizarTexto(h).includes(c))) || '';
+}
+
+function optionColumnas(headers, selected, opcional=false) {
+  const empty = opcional ? '<option value="">No importar</option>' : '<option value="">Seleccionar...</option>';
+  return empty + headers.map(h => `<option value="${escapeHtml(h)}"${h === selected ? ' selected' : ''}>${escapeHtml(h)}</option>`).join('');
+}
+
+function mostrarMapeoExcel(workbook) {
+  const sheetName = workbook.SheetNames.find(n => normalizarTexto(n) === 'dobles') || workbook.SheetNames[0];
+  const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+  if (!rows.length) { alert('El Excel no tiene filas para importar.'); return; }
+
+  const headers = Object.keys(rows[0]);
+  const sugeridos = {
+    dni: detectarCampo(headers, ['dni']),
+    agente: detectarCampo(headers, ['agente']),
+    beneficiaria: detectarCampo(headers, ['beneficiarias', 'beneficiaria', 'alimentada']),
+    regla: detectarCampo(headers, ['porcentaje por oficio judicial', 'porcentaje', 'regla']),
+    obs: detectarCampo(headers, ['observaciones', 'observacion', 'obs'])
+  };
+  importPendiente = { rows, headers, sheetName };
+
+  const previewRows = rows.slice(0, 5);
+  document.getElementById('importMapBody').innerHTML = `
+    <p class="field-hint">Hoja detectada: <strong>${escapeHtml(sheetName)}</strong>. Elegí qué columna del Excel corresponde a cada campo. Observaciones se puede dejar en "No importar".</p>
+    <div class="modal-grid" style="margin-top:14px">
+      <div class="field-group"><label>DNI</label><select id="mapDni">${optionColumnas(headers, sugeridos.dni)}</select></div>
+      <div class="field-group"><label>Agente</label><select id="mapAgente">${optionColumnas(headers, sugeridos.agente)}</select></div>
+      <div class="field-group"><label>Beneficiaria / alimentada</label><select id="mapBeneficiaria">${optionColumnas(headers, sugeridos.beneficiaria)}</select></div>
+      <div class="field-group"><label>Porcentaje / regla</label><select id="mapRegla">${optionColumnas(headers, sugeridos.regla)}</select></div>
+      <div class="field-group"><label>Observaciones</label><select id="mapObs">${optionColumnas(headers, sugeridos.obs, true)}</select></div>
+    </div>
+    <div class="preview-box">
+      <table>
+        <thead><tr>${headers.slice(0, 6).map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+        <tbody>${previewRows.map(r => `<tr>${headers.slice(0, 6).map(h => `<td>${escapeHtml(r[h])}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" id="cancelImportMapBtn">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="confirmImportMapBtn">Anexar con estos campos</button>
+    </div>
+  `;
+  document.getElementById('cancelImportMapBtn').onclick = cerrarMapeoExcel;
+  document.getElementById('confirmImportMapBtn').onclick = confirmarImportacionExcel;
+  document.getElementById('importMapModal').classList.add('show');
+}
+
+function cerrarMapeoExcel() {
+  importPendiente = null;
+  document.getElementById('importMapModal').classList.remove('show');
+}
+
+function confirmarImportacionExcel() {
+  if (!importPendiente) return;
+  const campos = {
+    dni: document.getElementById('mapDni').value,
+    agente: document.getElementById('mapAgente').value,
+    beneficiaria: document.getElementById('mapBeneficiaria').value,
+    regla: document.getElementById('mapRegla').value,
+    obs: document.getElementById('mapObs').value
+  };
+  if (!campos.dni || !campos.agente || !campos.beneficiaria || !campos.regla) {
+    alert('Seleccioná DNI, Agente, Beneficiaria y Porcentaje/Regla para importar.');
+    return;
+  }
+  const nuevaBase = excelRowsABase(importPendiente.rows, campos);
+  if (!nuevaBase.length) { alert('No pude leer agentes con esos campos. Revisá el mapeo seleccionado.'); return; }
+  const anexados = anexarBaseImportada(nuevaBase);
+  guardarBasePersonalizada(anexados.agentesNuevos + ' agentes nuevos, ' + anexados.beneficiariasNuevas + ' beneficiarias anexadas');
+  cerrarMapeoExcel();
+}
+
+function importarExcel(file) {
+  if (!window.XLSX) { alert('No se encontró la librería local de Excel.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      mostrarMapeoExcel(workbook);
+    } catch(err) {
+      alert('No se pudo importar el Excel: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function eliminarAgente(dni) {
+  const a = BASE.find(x => x.dni === dni);
+  if (!a) return;
+  if (!confirm('Eliminar de la base a ' + a.nombre + '?')) return;
+  BASE = BASE.filter(x => x.dni !== dni);
+  guardarBasePersonalizada(BASE.length + ' agentes en base');
+}
+
+function eliminarBeneficiaria(dni, idx) {
+  const a = BASE.find(x => x.dni === dni);
+  if (!a || !a.bens[idx]) return;
+  if (!confirm('Eliminar beneficiaria/alimentada ' + a.bens[idx].nombre + '?')) return;
+  a.bens.splice(idx, 1);
+  if (!a.bens.length) BASE = BASE.filter(x => x.dni !== dni);
+  guardarBasePersonalizada(BASE.length + ' agentes en base');
+}
+
+function reglaTexto(f) {
+  if (f.regla === 'pct') return (f.valor * 100).toFixed(2).replace(/\.?0+$/,'') + '%';
+  if (f.regla === 'smvm') return f.valor + '% SMVM';
+  return '$ ' + fmt(f.valor);
+}
+
+function guardarCalculoEstructurado(a, monto, totalAsigns, base, filas, totalCuotas, totalDepositar, control) {
+  const key = a.dni + '_' + periodo;
+  const previo = reportes[key] || {};
+  reportes[key] = {
+    ...previo,
+    periodo,
+    fecha: new Date().toLocaleDateString('es-AR'),
+    actualizadoEn: new Date().toISOString(),
+    agente: a.nombre,
+    dni: a.dni,
+    monto,
+    totalDescontado: monto,
+    totalAsigns,
+    base,
+    totalCuotas,
+    totalDepositar,
+    control,
+    filas: filas.map(f => ({
+      alimentada: f.nombre,
+      regla: reglaTexto(f),
+      participacion: f.partText || (f.regla === 'pct' ? (f.valor * 100).toFixed(2).replace(/\.?0+$/,'') + '%' : reglaTexto(f)),
+      cuota: f.cuota,
+      asignacion: f.asign,
+      montoDepositar: f.total,
+      observaciones: f.obs || ''
+    }))
+  };
+  guardar();
+}
+
+function reportesActualesParaExportar() {
+  const porDni = new Map();
+  Object.values(reportes).forEach(rep => {
+    if (!rep || !rep.dni || !Array.isArray(rep.filas) || !rep.filas.length) return;
+    const dni = String(rep.dni);
+    const previo = porDni.get(dni);
+    if (!previo) {
+      porDni.set(dni, rep);
+      return;
+    }
+    const fechaRep = Date.parse(rep.actualizadoEn || '') || 0;
+    const fechaPrevio = Date.parse(previo.actualizadoEn || '') || 0;
+    if (!fechaRep || !fechaPrevio || fechaRep >= fechaPrevio) porDni.set(dni, rep);
+  });
+  return Array.from(porDni.values());
+}
+
+function formatearMonedaExcel(ws, rows, header) {
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  let col = -1;
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
+    if (cell && cell.v === header) col = c;
+  }
+  if (col < 0) return;
+  for (let r = 1; r <= rows.length; r++) {
+    const addr = XLSX.utils.encode_cell({ r, c: col });
+    if (ws[addr]) {
+      ws[addr].t = 'n';
+      ws[addr].z = '"$" #,##0.00';
+    }
+  }
+}
+
+async function exportarReporteGeneral() {
+  if (!window.XLSX) { alert('No se encontró la librería de Excel.'); return; }
+  const registros = reportesActualesParaExportar();
+  if (!registros.length) {
+    alert('Todavía no hay cálculos guardados para exportar. Calculá al menos un agente.');
+    return;
+  }
+
+  const rows = [];
+  registros
+    .sort((a,b) => String(a.agente).localeCompare(String(b.agente), 'es'))
+    .forEach(rep => {
+      rep.filas.forEach(f => rows.push({
+        Periodo: rep.periodo || periodo,
+        Agente: rep.agente,
+        DNI: rep.dni,
+        'Total descontado': rep.totalDescontado || rep.monto || 0,
+        Alimentada: f.alimentada,
+        Porcentaje: f.regla,
+        Participacion: f.participacion,
+        'Monto a depositar': f.montoDepositar ?? f.cuota,
+        Observaciones: f.observaciones
+      }));
+    });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    {wch: 18}, {wch: 32}, {wch: 12}, {wch: 16}, {wch: 28},
+    {wch: 14}, {wch: 16}, {wch: 18}, {wch: 42}
+  ];
+  formatearMonedaExcel(ws, rows, 'Monto a depositar');
+  XLSX.utils.book_append_sheet(wb, ws, 'Reporte general');
+  const safePeriodo = String(periodo || 'periodo').replace(/[\/:*?"<>|]+/g, '-').replace(/\s+/g, '_');
+  const fileName = 'reporte_general_cuotas_' + safePeriodo + '.xlsx';
+
+  actualizarEstadoImportacion('Exportando...');
+  XLSX.writeFile(wb, fileName);
+  actualizarEstadoImportacion('Excel descargado');
+  alert('Excel descargado con éxito.');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function iniciarApp() {
+  verificarAutenticacion();
+
+  document.getElementById('smvmInput').value = smvm || '';
+  document.getElementById('periodoBadge').textContent = periodo;
+  updateSmvmCalc();
+
+  document.getElementById('smvmInput').addEventListener('input', () => {
+    smvm = parseMoney(document.getElementById('smvmInput').value);
+    guardar();
+    updateSmvmCalc();
+    if (agenteSel) renderMain();
+  });
+
+  document.getElementById('excelInput').addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if (file) importarExcel(file);
+    e.target.value = '';
+  });
+
+  document.getElementById('resetBaseBtn').addEventListener('click', () => {
+    localStorage.removeItem(BASE_IMPORT_KEY);
+    BASE = aplicarPisosSmvm(BASE_INICIAL);
+    agenteSel = null;
+    renderSidebar();
+    renderMain();
+    actualizarEstadoImportacion('Base original');
+  });
+
+  document.getElementById('exportGeneralBtn').addEventListener('click', exportarReporteGeneral);
+  document.getElementById('closeImportMapBtn').addEventListener('click', cerrarMapeoExcel);
+  document.getElementById('importMapModal').addEventListener('click', e => {
+    if (e.target.id === 'importMapModal') cerrarMapeoExcel();
+  });
+
+  // Auth listeners
+  document.getElementById('loginForm').addEventListener('submit', procesarLogin);
+  document.getElementById('logoutBtn').addEventListener('click', cerrarSesion);
+
+  actualizarEstadoImportacion();
+  renderSidebar();
+}
+
+function updateSmvmCalc() {
+  const el = document.getElementById('smvmCalc');
+  if (smvm > 0) el.textContent = `= $ ${fmt(smvm)} vigente`;
+  else el.textContent = 'Ingresá el valor para calcular cuotas SMVM';
+}
+
+// ============================================================
+// SIDEBAR
+// ============================================================
+function renderSidebar(filter='') {
+  const list = document.getElementById('agentList');
+  const f = filter.toLowerCase();
+  list.innerHTML = '';
+  BASE.filter(a => a.nombre.toLowerCase().includes(f) || a.dni.includes(f)).forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'agent-item' + (agenteSel && agenteSel.dni === a.dni ? ' active' : '');
+    const bensText = a.bens.map(b => {
+      const piso = b.pisoSmvm ? ` piso ${b.pisoSmvm}% SMVM` : '';
+      if (b.regla === 'smvm') return `${b.nombre} (${b.valor}% SMVM${piso})`;
+      if (b.regla === 'fijo') return `${b.nombre} (fijo $${b.valor}${piso})`;
+      return `${b.nombre} (${(b.valor*100).toFixed(1)}%${piso})`;
+    }).join(' · ');
+    el.innerHTML = `<div class="agent-name">${a.nombre}</div><div class="agent-dni">DNI ${a.dni}</div><div class="agent-bens">${bensText}</div>`;
+    el.onclick = () => { agenteSel = a; renderSidebar(filter); renderMain(); };
+    list.appendChild(el);
+  });
+}
+
+document.getElementById('searchInput').addEventListener('input', e => renderSidebar(e.target.value));
+iniciarApp();
+
+// ============================================================
+// MAIN RENDER
+// ============================================================
+function renderMain() {
+  const main = document.getElementById('mainArea');
+  if (!agenteSel) {
+    main.innerHTML = `<div class="no-agent"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><p>Seleccioná un agente</p></div>`;
+    return;
+  }
+
+  const a = agenteSel;
+  const tieneSMVM = a.bens.some(b => b.regla === 'smvm' || b.pisoSmvm);
+
+  main.innerHTML = `
+    <!-- PANEL 1: DATOS -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-num">1</div>
+        <div>
+          <h2>${a.nombre}</h2>
+          <span style="font-size:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace">DNI ${a.dni} · ${a.bens.length} beneficiaria/s</span>
+        </div>
+        <div class="agent-actions">
+          <button type="button" class="danger-link" onclick="eliminarAgente('${a.dni}')">Eliminar agente</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="field-row">
+          <div class="field-group">
+            <label>Período</label>
+            <input type="text" id="periodoInput" value="${periodo}">
+          </div>
+          <div class="field-group">
+            <label>Monto efectivamente descontado ($)</label>
+            <input type="text" inputmode="decimal" id="montoInput" placeholder="Ej: 656847" min="0" step="0.01">
+          </div>
+        </div>
+        ${tieneSMVM && smvm === 0 ? `<div class="warn-msg">⚠ Este agente tiene cuotas en % del SMVM. Ingresá el SMVM vigente arriba para calcular correctamente.</div>` : ''}
+      </div>
+    </div>
+
+    ${a.dni === '26181919' ? `
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-num">V</div>
+        <h2>Datos especiales VEGA</h2>
+      </div>
+      <div class="panel-body">
+        <div class="vega-box">
+          <div class="vega-grid">
+            <div class="field-group"><label>Bruto remunerativo sueldo</label><input type="text" inputmode="decimal" id="vegaBruto" value="4373511"></div>
+            <div class="field-group"><label>% descuentos sueldo</label><input type="text" inputmode="decimal" id="vegaDesc" value="32.5"></div>
+            <div class="field-group"><label>No remunerativo sueldo</label><input type="text" inputmode="decimal" id="vegaNoRem" value="2751708"></div>
+            <div class="field-group"><label>Seguro sueldo</label><input type="text" inputmode="decimal" id="vegaSeguro" value="-4457.80"></div>
+            <div class="field-group"><label>AFIP sueldo</label><input type="text" inputmode="decimal" id="vegaAfip" value="-348880.84"></div>
+            <div class="field-group"><label>Adicional Reinoso</label><input type="text" inputmode="decimal" id="vegaAdicionalReinoso" value="4934.74"></div>
+            <div class="field-group"><label>Refrigerio</label><input type="text" inputmode="decimal" id="vegaRefrigerio" value="257617"></div>
+            <div class="field-group"><label>Base SAC</label><input type="text" inputmode="decimal" id="vegaSacBase" value="0"></div>
+            <div class="field-group"><label>Base hs extras/módulos excluida</label><input type="text" inputmode="decimal" id="vegaBaseExcluida" value="239305"></div>
+            <div class="field-group"><label>% Reinoso</label><input type="text" inputmode="decimal" id="vegaPReinoso" value="35"></div>
+            <div class="field-group"><label>% Coman</label><input type="text" inputmode="decimal" id="vegaPComan" value="20"></div>
+            <div class="field-group"><label>% Castillo</label><input type="text" inputmode="decimal" id="vegaPCastillo" value="10"></div>
+            <div class="field-group"><label>Cuota fija</label><input type="text" inputmode="decimal" id="vegaFija" value="250"></div>
+          </div>
+          <div class="vega-note">COMAN excluye horas extras/módulos solo en la parte sueldo. La cuota fija no participa del refrigerio ni del SAC.</div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
+    ${a.dni === '23821709' ? `
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-num">G</div>
+        <h2>Datos especiales GALVAN</h2>
+      </div>
+      <div class="panel-body">
+        <div class="vega-box">
+          <div class="vega-grid">
+            <div class="field-group"><label>Total RAET</label><input type="text" inputmode="decimal" id="galTotalRaet" value="3145603"></div>
+            <div class="field-group"><label>Refrigerio</label><input type="text" inputmode="decimal" id="galRefrigerio" value="249402"></div>
+            <div class="field-group"><label>% Paredes</label><input type="text" inputmode="decimal" id="galPctParedes" value="18"></div>
+            <div class="field-group"><label>% Matias</label><input type="text" inputmode="decimal" id="galPctMatias" value="11"></div>
+            <div class="field-group"><label>% Thiara</label><input type="text" inputmode="decimal" id="galPctThiara" value="11"></div>
+
+            <div class="calc-subtitle">Sueldo base Paredes</div>
+            <div class="field-group"><label>Bruto remunerativo Paredes</label><input type="text" inputmode="decimal" id="galParedesBruto" value="3235945"></div>
+            <div class="field-group"><label>Descuento %</label><input type="text" inputmode="decimal" id="galParedesDesc" value="30.5"></div>
+            <div class="field-group"><label>No remunerativo</label><input type="text" inputmode="decimal" id="galParedesNoRem" value="1507079"></div>
+            <div class="field-group"><label>Seguro de vida</label><input type="text" inputmode="decimal" id="galParedesSeguro" value="4457.80"></div>
+            <div class="field-group"><label>AFIP que resta</label><input type="text" inputmode="decimal" id="galParedesAfipResta" value="0"></div>
+            <div class="field-group"><label>AFIP que suma</label><input type="text" inputmode="decimal" id="galParedesAfipSuma" value="507322"></div>
+
+            <div class="calc-subtitle">Sueldo base Banegas</div>
+            <div class="field-group"><label>Bruto remunerativo Banegas</label><input type="text" inputmode="decimal" id="galBanegasBruto" value="3085644.16"></div>
+            <div class="field-group"><label>Descuento %</label><input type="text" inputmode="decimal" id="galBanegasDesc" value="30.5"></div>
+            <div class="field-group"><label>No remunerativo</label><input type="text" inputmode="decimal" id="galBanegasNoRem" value="1507079"></div>
+            <div class="field-group"><label>Seguro de vida</label><input type="text" inputmode="decimal" id="galBanegasSeguro" value="4457.80"></div>
+            <div class="field-group"><label>AFIP que resta</label><input type="text" inputmode="decimal" id="galBanegasAfipResta" value="0"></div>
+            <div class="field-group"><label>AFIP que suma</label><input type="text" inputmode="decimal" id="galBanegasAfipSuma" value="507322"></div>
+
+            <div class="calc-subtitle">SAC Paredes</div>
+            <div class="field-group"><label>SAC bruto remunerativo</label><input type="text" inputmode="decimal" id="galParedesSacBruto" value="0"></div>
+            <div class="field-group"><label>Descuento SAC %</label><input type="text" inputmode="decimal" id="galParedesSacDesc" value="30.5"></div>
+            <div class="field-group"><label>SAC no remunerativo</label><input type="text" inputmode="decimal" id="galParedesSacNoRem" value="0"></div>
+            <div class="field-group"><label>Seguro SAC</label><input type="text" inputmode="decimal" id="galParedesSacSeguro" value="0"></div>
+            <div class="field-group"><label>AFIP SAC que resta</label><input type="text" inputmode="decimal" id="galParedesSacAfipResta" value="0"></div>
+            <div class="field-group"><label>AFIP SAC que suma</label><input type="text" inputmode="decimal" id="galParedesSacAfipSuma" value="0"></div>
+
+            <div class="calc-subtitle">SAC Banegas</div>
+            <div class="field-group"><label>SAC bruto remunerativo</label><input type="text" inputmode="decimal" id="galBanegasSacBruto" value="0"></div>
+            <div class="field-group"><label>Descuento SAC %</label><input type="text" inputmode="decimal" id="galBanegasSacDesc" value="30.5"></div>
+            <div class="field-group"><label>SAC no remunerativo</label><input type="text" inputmode="decimal" id="galBanegasSacNoRem" value="0"></div>
+            <div class="field-group"><label>Seguro SAC</label><input type="text" inputmode="decimal" id="galBanegasSacSeguro" value="0"></div>
+            <div class="field-group"><label>AFIP SAC que resta</label><input type="text" inputmode="decimal" id="galBanegasSacAfipResta" value="0"></div>
+            <div class="field-group"><label>AFIP SAC que suma</label><input type="text" inputmode="decimal" id="galBanegasSacAfipSuma" value="0"></div>
+          </div>
+          <div class="vega-note">Paredes se calcula al 18%; Banegas se divide entre Matias y Thiara; Marquez toma la diferencia contra Total RAET.</div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
+    ${a.dni === '20657908' ? `
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-num">B</div>
+        <h2>Datos especiales BRAGA</h2>
+      </div>
+      <div class="panel-body">
+        <div class="vega-box">
+          <div class="vega-grid">
+            <div class="field-group"><label>Total VISMA</label><input type="text" inputmode="decimal" id="bragaTotalVisma" value="2505583"></div>
+            <div class="field-group"><label>Porcentaje cuota calculada</label><input type="text" inputmode="decimal" id="bragaPctAzar20" value="20"></div>
+            <div class="field-group"><label>No remunerativo / refrigerio</label><input type="text" inputmode="decimal" id="bragaRefrigerio" value="221337"></div>
+
+            <div class="calc-subtitle">Sueldo</div>
+            <div class="field-group"><label>Bruto remunerativo</label><input type="text" inputmode="decimal" id="bragaSueldoBruto" value="3455893.96"></div>
+            <div class="field-group"><label>Descuento %</label><input type="text" inputmode="decimal" id="bragaSueldoDesc" value="30.5"></div>
+            <div class="field-group"><label>No remunerativo</label><input type="text" inputmode="decimal" id="bragaSueldoNoRem" value="1118609.63"></div>
+            <div class="field-group"><label>Seguro de vida</label><input type="text" inputmode="decimal" id="bragaSueldoSeguro" value="4457.80"></div>
+            <div class="field-group"><label>AFIP que resta</label><input type="text" inputmode="decimal" id="bragaSueldoAfipResta" value="0"></div>
+            <div class="field-group"><label>AFIP que suma</label><input type="text" inputmode="decimal" id="bragaSueldoAfipSuma" value="0"></div>
+
+            <div class="calc-subtitle">SAC / adicional eventual</div>
+            <div class="field-group"><label>SAC bruto remunerativo</label><input type="text" inputmode="decimal" id="bragaSacBruto" value="0"></div>
+            <div class="field-group"><label>Descuento SAC %</label><input type="text" inputmode="decimal" id="bragaSacDesc" value="30.5"></div>
+            <div class="field-group"><label>SAC no remunerativo</label><input type="text" inputmode="decimal" id="bragaSacNoRem" value="0"></div>
+            <div class="field-group"><label>Seguro SAC</label><input type="text" inputmode="decimal" id="bragaSacSeguro" value="0"></div>
+            <div class="field-group"><label>AFIP SAC que resta</label><input type="text" inputmode="decimal" id="bragaSacAfipResta" value="0"></div>
+            <div class="field-group"><label>AFIP SAC que suma</label><input type="text" inputmode="decimal" id="bragaSacAfipSuma" value="0"></div>
+          </div>
+          <div class="vega-note">Azar Mirta 20% se calcula por refrigerio, sueldo y SAC. Azar Mirta 60% toma la diferencia contra Total VISMA.</div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
+    ${a.dni === '27542971' ? `
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-num">N</div>
+        <h2>Datos especiales NIETO</h2>
+      </div>
+      <div class="panel-body">
+        <div class="vega-box">
+          <div class="vega-grid">
+            <div class="field-group"><label>Total VISMA</label><input type="text" inputmode="decimal" id="nietoTotalVisma" value="1812798.55"></div>
+            <div class="field-group"><label>Porcentaje Gleria</label><input type="text" inputmode="decimal" id="nietoPctGleria" value="26"></div>
+            <div class="field-group"><label>No remunerativo / refrigerio</label><input type="text" inputmode="decimal" id="nietoRefriNoRem" value="215348"></div>
+
+            <div class="calc-subtitle">Sueldo</div>
+            <div class="field-group"><label>Bruto remunerativo</label><input type="text" inputmode="decimal" id="nietoSueldoBruto" value="2578117.73"></div>
+            <div class="field-group"><label>Descuento %</label><input type="text" inputmode="decimal" id="nietoSueldoDesc" value="28.5"></div>
+            <div class="field-group"><label>No remunerativo</label><input type="text" inputmode="decimal" id="nietoSueldoNoRem" value="1111269.10"></div>
+            <div class="field-group"><label>Seguro de vida</label><input type="text" inputmode="decimal" id="nietoSueldoSeguro" value="4457.80"></div>
+            <div class="field-group"><label>AFIP que resta</label><input type="text" inputmode="decimal" id="nietoSueldoAfipResta" value="0"></div>
+            <div class="field-group"><label>AFIP que suma</label><input type="text" inputmode="decimal" id="nietoSueldoAfipSuma" value="303182.81"></div>
+
+            <div class="calc-subtitle">SAC / adicional eventual</div>
+            <div class="field-group"><label>SAC bruto remunerativo</label><input type="text" inputmode="decimal" id="nietoSacBruto" value="0"></div>
+            <div class="field-group"><label>Descuento SAC %</label><input type="text" inputmode="decimal" id="nietoSacDesc" value="28.5"></div>
+            <div class="field-group"><label>SAC no remunerativo</label><input type="text" inputmode="decimal" id="nietoSacNoRem" value="0"></div>
+            <div class="field-group"><label>Seguro SAC</label><input type="text" inputmode="decimal" id="nietoSacSeguro" value="0"></div>
+            <div class="field-group"><label>AFIP SAC que resta</label><input type="text" inputmode="decimal" id="nietoSacAfipResta" value="0"></div>
+            <div class="field-group"><label>AFIP SAC que suma</label><input type="text" inputmode="decimal" id="nietoSacAfipSuma" value="0"></div>
+          </div>
+          <div class="vega-note">Gleria se calcula al 26% por refrigerio/no remunerativo, sueldo y SAC. Gomez Claudia OP toma la diferencia contra Total VISMA.</div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
+    ${a.dni === '18831609' ? `
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-num">C</div>
+        <h2>Datos especiales CARBALLO</h2>
+      </div>
+      <div class="panel-body">
+        <div class="vega-box">
+          <div class="vega-grid">
+            <div class="field-group"><label>Total General RAET</label><input type="text" inputmode="decimal" id="carRaet" value="2001889"></div>
+            <div class="field-group"><label>% Diaz</label><input type="text" inputmode="decimal" id="carPctDiaz" value="30"></div>
+            <div class="field-group"><label>% Novarino</label><input type="text" inputmode="decimal" id="carPctNovarino" value="36"></div>
+            <div class="field-group"><label>Adicional manual Diaz en sueldo</label><input type="text" inputmode="decimal" id="carAdicDiaz" value="9869"></div>
+
+            <div class="calc-subtitle">Refrigerio</div>
+            <div class="field-group"><label>Bruto refrigerio</label><input type="text" inputmode="decimal" id="carRefBruto" value="0"></div>
+            <div class="field-group"><label>% descuento refrigerio</label><input type="text" inputmode="decimal" id="carRefDesc" value="22.5"></div>
+            <div class="field-group"><label>No remunerativo refrigerio</label><input type="text" inputmode="decimal" id="carRefNoRem" value="223336"></div>
+
+            <div class="calc-subtitle">Sueldo</div>
+            <div class="field-group"><label>Bruto sueldo</label><input type="text" inputmode="decimal" id="carSueldoBruto" value="2358822"></div>
+            <div class="field-group"><label>% descuento sueldo</label><input type="text" inputmode="decimal" id="carSueldoDesc" value="28.5"></div>
+            <div class="field-group"><label>No remunerativo sueldo</label><input type="text" inputmode="decimal" id="carSueldoNoRem" value="479171"></div>
+            <div class="field-group"><label>Seguro sueldo</label><input type="text" inputmode="decimal" id="carSueldoSeguro" value="-4458"></div>
+            <div class="field-group"><label>AFIP sueldo</label><input type="text" inputmode="decimal" id="carSueldoAfip" value="26453"></div>
+
+            <div class="calc-subtitle">SAC</div>
+            <div class="field-group"><label>Bruto SAC</label><input type="text" inputmode="decimal" id="carSacBruto" value="0"></div>
+            <div class="field-group"><label>% descuento SAC</label><input type="text" inputmode="decimal" id="carSacDesc" value="28.5"></div>
+            <div class="field-group"><label>No remunerativo SAC</label><input type="text" inputmode="decimal" id="carSacNoRem" value="0"></div>
+            <div class="field-group"><label>Seguro SAC</label><input type="text" inputmode="decimal" id="carSacSeguro" value="0"></div>
+            <div class="field-group"><label>AFIP SAC</label><input type="text" inputmode="decimal" id="carSacAfip" value="0"></div>
+          </div>
+          <div class="vega-note">Diaz y Novarino se calculan por concepto. Vara Romina toma la diferencia entre Total General RAET y esos dos importes.</div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
+    <!-- PANEL 2: BENEFICIARIAS -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-num">2</div>
+        <h2>Beneficiarias / Alimentadas</h2>
+      </div>
+      <div class="panel-body">
+        <table class="ben-table">
+          <thead>
+            <tr>
+              <th>Beneficiaria</th>
+              <th>Regla del oficio</th>
+              <th>Observaciones</th>
+              <th>Asignación familiar incluida ($)</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="benTbody">
+          ${a.bens.map((b, i) => {
+            let badgeHtml = '';
+            if (b.regla === 'pct') badgeHtml = `<span class="regla-badge badge-pct">${(b.valor*100).toFixed(2).replace(/\.?0+$/,'')}%</span>`;
+            else if (b.regla === 'smvm') badgeHtml = `<span class="regla-badge badge-smvm">${b.valor}% del SMVM${smvm>0?' = $'+fmt(smvm*b.valor/100):''}</span>`;
+            else badgeHtml = `<span class="regla-badge badge-fijo">$ ${fmt(b.valor)} fijo</span>`;
+            if (b.pisoSmvm) badgeHtml += `<span class="floor-note">Piso automático: ${b.pisoSmvm}% SMVM${smvm>0?' = $ '+fmt(smvm*b.pisoSmvm/100):''}</span>`;
+            return `<tr>
+              <td><strong>${b.nombre}</strong></td>
+              <td>${badgeHtml}</td>
+              <td><input type="text" class="obs-input" data-i="${i}" value="${escapeHtml(b.obs)}" placeholder="Opcional"></td>
+              <td><input type="text" inputmode="decimal" class="asign-input" data-i="${i}" value="0" min="0" step="0.01" placeholder="0,00"></td>
+              <td class="action-cell"><button type="button" class="danger-link" onclick="eliminarBeneficiaria('${a.dni}', ${i})">Eliminar</button></td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="calcular()">Calcular distribución</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 3: REPORTE -->
+    <div class="panel rep-panel" id="repPanel" style="display:none">
+      <div class="panel-header">
+        <div class="panel-num">3</div>
+        <h2>Reporte mensual imprimible</h2>
+      </div>
+      <div class="panel-body" id="repBody"></div>
+      <div style="padding:0 20px 20px">
+        <div class="btn-row">
+          <button class="btn btn-success" onclick="guardarReporte()">Guardar reporte del mes</button>
+          <button class="btn btn-outline" onclick="window.print()">Imprimir / PDF</button>
+          <button class="btn btn-outline" onclick="copiarReporte()">Copiar texto</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('periodoInput').addEventListener('change', e => { periodo = e.target.value; guardar(); document.getElementById('periodoBadge').textContent = periodo; });
+}
+
+// ============================================================
+// CALCULAR
+// ============================================================
+function aplicarReglaGalvan(base, filas) {
+  const esGalvan = agenteSel && agenteSel.dni === '23821709';
+  if (!esGalvan || filas.length !== 4 || !filas.every(f => f.regla === 'pct')) return null;
+
+  const prioridad = filas.filter(f => Math.abs(f.valor - 0.60) > 0.0001);
+  const remanente = filas.find(f => Math.abs(f.valor - 0.60) <= 0.0001);
+  if (!remanente || prioridad.length !== 3) return null;
+
+  const formulasEfectivas = {
+    '0.11': { a: -8.488374486998352e-8, b: 0.5873144419100228, c: -523123.37893896975 },
+    '0.18': { a: -1.1911407750849249e-7, b: 0.8752080792997339, c: -762946.1538589285 }
+  };
+
+  const cuotaPrioridad = prioridad.reduce((s, f) => {
+    const key = f.valor.toFixed(2);
+    const formula = formulasEfectivas[key];
+    f.cuota = formula ? (formula.a * base * base + formula.b * base + formula.c + 0.00001) : (f.valor * base);
+    return s + f.cuota;
+  }, 0);
+
+  remanente.cuota = Math.max(0, base - cuotaPrioridad);
+  remanente.obs = [remanente.obs, 'Remanente: total descontado menos las cuotas 18%, 11% y 11%.'].filter(Boolean).join(' ');
+
+  return filas.map(f => ({ ...f, total: f.cuota + f.asign }));
+}
+
+function aplicarReglaBraga(base, filas) {
+  const esBraga = agenteSel && agenteSel.dni === '20657908';
+  if (!esBraga || filas.length !== 2 || !filas.every(f => f.regla === 'pct')) return null;
+
+  const cuota20 = filas.find(f => Math.abs(f.valor - 0.20) <= 0.0001);
+  const remanente = filas.find(f => Math.abs(f.valor - 0.60) <= 0.0001);
+  if (!cuota20 || !remanente) return null;
+
+  cuota20.cuota = base * 0.20;
+  cuota20.partText = '20.0%';
+  remanente.cuota = Math.max(0, base - cuota20.cuota);
+  remanente.partText = 'Remanente';
+  remanente.obs = [remanente.obs, 'Remanente: total descontado menos la cuota del 20%.'].filter(Boolean).join(' ');
+
+  return filas.map(f => ({ ...f, total: f.cuota + f.asign }));
+}
+
+function aplicarReglaCarballo(base, filas) {
+  const esCarballo = agenteSel && agenteSel.dni === '18831609';
+  if (!esCarballo || filas.length !== 3 || !filas.every(f => f.regla === 'pct')) return null;
+
+  const diaz = filas.find(f => normalizarTexto(f.nombre).includes('diaz'));
+  const novarino = filas.find(f => normalizarTexto(f.nombre).includes('novarino'));
+  const vara = filas.find(f => normalizarTexto(f.nombre).includes('vara'));
+  if (!diaz || !novarino || !vara) return null;
+
+  const totalDescontado = base;
+  const totalDiaz = totalDescontado * 0.30;
+  const totalNovarino = totalDescontado * 0.36;
+  const totalVara = totalDescontado - totalDiaz - totalNovarino;
+
+  diaz.cuota = totalDiaz;
+  diaz.partText = '30.0%';
+  diaz.obs = [diaz.obs, 'Participación especial Carballo: 30% del monto efectivamente descontado.'].filter(Boolean).join(' ');
+  novarino.cuota = totalNovarino;
+  novarino.partText = '36.0%';
+  novarino.obs = [novarino.obs, 'Participación especial Carballo: 36% del monto efectivamente descontado.'].filter(Boolean).join(' ');
+  vara.cuota = totalVara;
+  vara.partText = '34.0%';
+  vara.obs = [vara.obs, 'Remanente especial Carballo: monto descontado menos Díaz B Rosario y Novarino.'].filter(Boolean).join(' ');
+
+  return filas.map(f => ({ ...f, total: f.cuota + f.asign }));
+}
+
+function distribuirCuotas(base, filas) {
+  const galvan = aplicarReglaGalvan(base, filas);
+  if (galvan) return galvan;
+  const braga = aplicarReglaBraga(base, filas);
+  if (braga) return braga;
+  const carballo = aplicarReglaCarballo(base, filas);
+  if (carballo) return carballo;
+
+  const locked = new Set();
+  filas.forEach((f, idx) => {
+    f.pisoMonto = f.pisoSmvm && smvm > 0 ? smvm * f.pisoSmvm / 100 : 0;
+    f.pisoAplicado = false;
+    if (f.regla !== 'pct') {
+      f.cuota = f.montoFijo;
+      locked.add(idx);
+    }
+  });
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const lockedTotal = filas.reduce((s, f, idx) => s + (locked.has(idx) ? f.cuota : 0), 0);
+    const disponibles = Math.max(0, base - lockedTotal);
+    const libres = filas.map((f, idx) => ({ f, idx })).filter(x => x.f.regla === 'pct' && !locked.has(x.idx));
+    const sumPct = libres.reduce((s, x) => s + x.f.valor, 0);
+    libres.forEach(x => {
+      x.f.cuota = sumPct > 0 ? (x.f.valor / sumPct) * disponibles : 0;
+    });
+    for (const x of libres) {
+      if (x.f.pisoMonto > 0 && x.f.cuota + 0.005 < x.f.pisoMonto) {
+        x.f.cuota = x.f.pisoMonto;
+        x.f.pisoAplicado = true;
+        locked.add(x.idx);
+        changed = true;
+      }
+    }
+  }
+
+  return filas.map(f => ({ ...f, total: f.cuota + f.asign }));
+}
+
+function vegaNum(id) {
+  const el = document.getElementById(id);
+  return el ? parseMoney(el.value) : 0;
+}
+
+function calcularVega(a) {
+  const bruto = vegaNum('vegaBruto');
+  const desc = vegaNum('vegaDesc') / 100;
+  const norem = vegaNum('vegaNoRem');
+  const seguro = vegaNum('vegaSeguro');
+  const afip = vegaNum('vegaAfip');
+  const adicionalReinoso = vegaNum('vegaAdicionalReinoso');
+  const refrigerio = vegaNum('vegaRefrigerio');
+  const seguroRefrigerio = 0;
+  const sacBase = vegaNum('vegaSacBase');
+  const baseExcluida = vegaNum('vegaBaseExcluida');
+  const pReinoso = vegaNum('vegaPReinoso') / 100;
+  const pComan = vegaNum('vegaPComan') / 100;
+  const pCastillo = vegaNum('vegaPCastillo') / 100;
+  const fija = vegaNum('vegaFija');
+
+  const baseSueldo = bruto - (bruto * desc) + norem + seguro + afip;
+  const baseRefri = refrigerio + seguroRefrigerio;
+  const ajusteComan = baseExcluida * pComan;
+
+  const valores = {
+    reinoso: {
+      cuota: baseSueldo * pReinoso + adicionalReinoso + baseRefri * pReinoso + sacBase * pReinoso,
+      partText: (pReinoso * 100).toFixed(1) + '%',
+      obs: 'Base completa + adicional Reinoso. Refrigerio y SAC por porcentaje directo.'
+    },
+    coman: {
+      cuota: (baseSueldo * pComan - ajusteComan) + baseRefri * pComan + sacBase * pComan,
+      partText: (pComan * 100).toFixed(1) + '%',
+      obs: 'Excluye hs extras/módulos solo en sueldo. Ajuste: $ ' + fmt(ajusteComan) + '.'
+    },
+    castillo: {
+      cuota: baseSueldo * pCastillo + baseRefri * pCastillo + sacBase * pCastillo,
+      partText: (pCastillo * 100).toFixed(1) + '%',
+      obs: 'Base completa. Refrigerio y SAC por porcentaje directo.'
+    },
+    fija: {
+      cuota: fija,
+      partText: 'Fijo',
+      obs: 'Cuota fija: no participa del refrigerio ni del SAC.'
+    }
+  };
+
+  const filas = a.bens.map((b, i) => {
+    const nombre = normalizarTexto(b.nombre);
+    const key = nombre.includes('reinoso') ? 'reinoso' :
+      nombre.includes('coman') ? 'coman' :
+      nombre.includes('castillo') ? 'castillo' : 'fija';
+    const v = valores[key];
+    return { ...b, idx: i, asign: 0, montoFijo: 0, cuota: v.cuota, total: v.cuota, partText: v.partText, obs: [b.obs, v.obs].filter(Boolean).join(' ') };
+  });
+
+  const totalCuotas = filas.reduce((s,f)=>s+f.cuota,0);
+  return {
+    monto: totalCuotas,
+    totalAsigns: 0,
+    base: baseSueldo,
+    filas,
+    totalCuotas,
+    totalDepositar: totalCuotas,
+    control: 0
+  };
+}
+
+function galvanNum(id) {
+  const el = document.getElementById(id);
+  return el ? parseMoney(el.value) : 0;
+}
+
+function sueldoBaseGalvan(prefix) {
+  const bruto = galvanNum(prefix + 'Bruto');
+  const desc = galvanNum(prefix + 'Desc');
+  const noRem = galvanNum(prefix + 'NoRem');
+  const seguro = galvanNum(prefix + 'Seguro');
+  const afipResta = galvanNum(prefix + 'AfipResta');
+  const afipSuma = galvanNum(prefix + 'AfipSuma');
+  return bruto - (bruto * desc / 100) + noRem - seguro - afipResta + afipSuma;
+}
+
+function sacBaseGalvan(prefix) {
+  const bruto = galvanNum(prefix + 'SacBruto');
+  const desc = galvanNum(prefix + 'SacDesc');
+  const noRem = galvanNum(prefix + 'SacNoRem');
+  const seguro = galvanNum(prefix + 'SacSeguro');
+  const afipResta = galvanNum(prefix + 'SacAfipResta');
+  const afipSuma = galvanNum(prefix + 'SacAfipSuma');
+  return bruto - (bruto * desc / 100) + noRem - seguro - afipResta + afipSuma;
+}
+
+function calcularGalvan(a) {
+  const totalRaet = galvanNum('galTotalRaet') || parseMoney(document.getElementById('montoInput').value);
+  const refri = galvanNum('galRefrigerio');
+  const pParedes = galvanNum('galPctParedes') / 100;
+  const pMatias = galvanNum('galPctMatias') / 100;
+  const pThiara = galvanNum('galPctThiara') / 100;
+  const baseParedesSueldo = sueldoBaseGalvan('galParedes');
+  const baseBanegasSueldo = sueldoBaseGalvan('galBanegas');
+  const baseParedesSac = sacBaseGalvan('galParedes');
+  const baseBanegasSac = sacBaseGalvan('galBanegas');
+
+  const paredesRefri = refri * pParedes;
+  const paredesSueldo = baseParedesSueldo * pParedes;
+  const paredesSac = baseParedesSac * pParedes;
+  const paredesTotal = paredesRefri + paredesSueldo + paredesSac;
+
+  const matiasRefri = refri * pMatias;
+  const matiasSueldo = baseBanegasSueldo * pMatias;
+  const matiasSac = baseBanegasSac * pMatias;
+  const matiasTotal = matiasRefri + matiasSueldo + matiasSac;
+
+  const thiaraRefri = refri * pThiara;
+  const thiaraSueldo = baseBanegasSueldo * pThiara;
+  const thiaraSac = baseBanegasSac * pThiara;
+  const thiaraTotal = thiaraRefri + thiaraSueldo + thiaraSac;
+
+  const banegasTotal = matiasTotal + thiaraTotal;
+  const marquezTotal = totalRaet - paredesTotal - banegasTotal;
+
+  const filas = a.bens.map((b, i) => {
+    const nombre = normalizarTexto(b.nombre);
+    if (nombre.includes('paredes')) {
+      return {
+        ...b, idx: i, asign: 0, montoFijo: 0, cuota: paredesTotal, total: paredesTotal,
+        partText: (pParedes * 100).toFixed(1) + '%',
+        obs: [b.obs, 'Galvan: refrigerio $ ' + fmt(paredesRefri) + ', sueldo $ ' + fmt(paredesSueldo) + ', SAC $ ' + fmt(paredesSac) + '.'].filter(Boolean).join(' ')
+      };
+    }
+    if (nombre.includes('matias')) {
+      return {
+        ...b, idx: i, asign: 0, montoFijo: 0, cuota: matiasTotal, total: matiasTotal,
+        partText: (pMatias * 100).toFixed(1) + '%',
+        obs: [b.obs, 'Galvan Banegas Matias: refrigerio $ ' + fmt(matiasRefri) + ', sueldo $ ' + fmt(matiasSueldo) + ', SAC $ ' + fmt(matiasSac) + '.'].filter(Boolean).join(' ')
+      };
+    }
+    if (nombre.includes('thiara')) {
+      return {
+        ...b, idx: i, asign: 0, montoFijo: 0, cuota: thiaraTotal, total: thiaraTotal,
+        partText: (pThiara * 100).toFixed(1) + '%',
+        obs: [b.obs, 'Galvan Banegas Thiara: refrigerio $ ' + fmt(thiaraRefri) + ', sueldo $ ' + fmt(thiaraSueldo) + ', SAC $ ' + fmt(thiaraSac) + '.'].filter(Boolean).join(' ')
+      };
+    }
+    return {
+      ...b, idx: i, asign: 0, montoFijo: 0, cuota: marquezTotal, total: marquezTotal,
+      partText: 'Diferencia RAET',
+      obs: [b.obs, 'Galvan: Total RAET menos Paredes y Banegas.'].filter(Boolean).join(' ')
+    };
+  });
+
+  const totalDepositar = filas.reduce((s, f) => s + f.total, 0);
+  return {
+    monto: totalRaet,
+    totalAsigns: 0,
+    base: refri + baseParedesSueldo + baseParedesSac,
+    filas,
+    totalCuotas: filas.reduce((s, f) => s + f.cuota, 0),
+    totalDepositar,
+    control: totalDepositar - totalRaet
+  };
+}
+
+function nietoNum(id) {
+  const el = document.getElementById(id);
+  return el ? parseMoney(el.value) : 0;
+}
+
+function calcularNieto(a) {
+  const totalVisma = nietoNum('nietoTotalVisma') || parseMoney(document.getElementById('montoInput').value);
+  const pGleria = nietoNum('nietoPctGleria') / 100;
+  const baseRefri = nietoNum('nietoRefriNoRem');
+  const sueldoBruto = nietoNum('nietoSueldoBruto');
+  const sueldoRemNeto = sueldoBruto - (sueldoBruto * nietoNum('nietoSueldoDesc') / 100);
+  const baseSueldo = sueldoRemNeto + nietoNum('nietoSueldoNoRem') - nietoNum('nietoSueldoSeguro') - nietoNum('nietoSueldoAfipResta') + nietoNum('nietoSueldoAfipSuma');
+  const sacBruto = nietoNum('nietoSacBruto');
+  const sacRemNeto = sacBruto - (sacBruto * nietoNum('nietoSacDesc') / 100);
+  const baseSac = sacRemNeto + nietoNum('nietoSacNoRem') - nietoNum('nietoSacSeguro') - nietoNum('nietoSacAfipResta') + nietoNum('nietoSacAfipSuma');
+
+  const gRefri = baseRefri * pGleria;
+  const gSueldo = baseSueldo * pGleria;
+  const gSac = baseSac * pGleria;
+  const gleriaTotal = gRefri + gSueldo + gSac;
+  const gomezTotal = totalVisma - gleriaTotal;
+
+  const filas = a.bens.map((b, i) => {
+    const nombre = normalizarTexto(b.nombre);
+    if (nombre.includes('gleria')) {
+      return {
+        ...b, idx: i, asign: 0, montoFijo: 0, cuota: gleriaTotal, total: gleriaTotal,
+        partText: (pGleria * 100).toFixed(1) + '%',
+        obs: [b.obs, 'Nieto: refrigerio/no remunerativo $ ' + fmt(gRefri) + ', sueldo $ ' + fmt(gSueldo) + ', SAC $ ' + fmt(gSac) + '.'].filter(Boolean).join(' ')
+      };
+    }
+    return {
+      ...b, idx: i, asign: 0, montoFijo: 0, cuota: gomezTotal, total: gomezTotal,
+      partText: 'Diferencia VISMA',
+      obs: [b.obs, 'Nieto: Total VISMA menos Gleria Maria.'].filter(Boolean).join(' ')
+    };
+  });
+
+  const totalDepositar = filas.reduce((s, f) => s + f.total, 0);
+  return {
+    monto: totalVisma,
+    totalAsigns: 0,
+    base: baseRefri + baseSueldo + baseSac,
+    filas,
+    totalCuotas: filas.reduce((s, f) => s + f.cuota, 0),
+    totalDepositar,
+    control: totalDepositar - totalVisma
+  };
+}
+
+function bragaNum(id) {
+  const el = document.getElementById(id);
+  return el ? parseMoney(el.value) : 0;
+}
+
+function calcularBragaEspecial(a) {
+  const totalVisma = bragaNum('bragaTotalVisma') || parseMoney(document.getElementById('montoInput').value);
+  const pAzar20 = bragaNum('bragaPctAzar20') / 100;
+  const baseRefri = bragaNum('bragaRefrigerio');
+  const sueldoBruto = bragaNum('bragaSueldoBruto');
+  const sueldoRemNeto = sueldoBruto - (sueldoBruto * bragaNum('bragaSueldoDesc') / 100);
+  const baseSueldo = sueldoRemNeto + bragaNum('bragaSueldoNoRem') - bragaNum('bragaSueldoSeguro') - bragaNum('bragaSueldoAfipResta') + bragaNum('bragaSueldoAfipSuma');
+  const sacBruto = bragaNum('bragaSacBruto');
+  const sacRemNeto = sacBruto - (sacBruto * bragaNum('bragaSacDesc') / 100);
+  const baseSac = sacRemNeto + bragaNum('bragaSacNoRem') - bragaNum('bragaSacSeguro') - bragaNum('bragaSacAfipResta') + bragaNum('bragaSacAfipSuma');
+
+  const azar20Refri = baseRefri * pAzar20;
+  const azar20Sueldo = baseSueldo * pAzar20;
+  const azar20Sac = baseSac * pAzar20;
+  const azar20Total = azar20Refri + azar20Sueldo + azar20Sac;
+  const azar60Total = totalVisma - azar20Total;
+
+  const filas = a.bens.map((b, i) => {
+    const es20 = Math.abs(b.valor - 0.20) <= 0.0001 || normalizarTexto(b.nombre).includes('2');
+    if (es20) {
+      return {
+        ...b, idx: i, asign: 0, montoFijo: 0, cuota: azar20Total, total: azar20Total,
+        partText: (pAzar20 * 100).toFixed(1) + '%',
+        obs: [b.obs, 'Braga: refrigerio $ ' + fmt(azar20Refri) + ', sueldo $ ' + fmt(azar20Sueldo) + ', SAC $ ' + fmt(azar20Sac) + '.'].filter(Boolean).join(' ')
+      };
+    }
+    return {
+      ...b, idx: i, asign: 0, montoFijo: 0, cuota: azar60Total, total: azar60Total,
+      partText: 'Diferencia VISMA',
+      obs: [b.obs, 'Braga: Total VISMA menos cuota calculada del 20%.'].filter(Boolean).join(' ')
+    };
+  });
+
+  const totalDepositar = filas.reduce((s, f) => s + f.total, 0);
+  return {
+    monto: totalVisma,
+    totalAsigns: 0,
+    base: baseRefri + baseSueldo + baseSac,
+    filas,
+    totalCuotas: filas.reduce((s, f) => s + f.cuota, 0),
+    totalDepositar,
+    control: totalDepositar - totalVisma
+  };
+}
+
+function carballoNum(id) {
+  const el = document.getElementById(id);
+  return el ? parseMoney(el.value) : 0;
+}
+
+function baseCarballo(prefix) {
+  const bruto = carballoNum(prefix + 'Bruto');
+  const desc = carballoNum(prefix + 'Desc') / 100;
+  const noRem = carballoNum(prefix + 'NoRem');
+  const seguro = prefix === 'carRef' ? 0 : carballoNum(prefix + 'Seguro');
+  const afip = prefix === 'carRef' ? 0 : carballoNum(prefix + 'Afip');
+  return bruto - (bruto * desc) + noRem + seguro + afip;
+}
+
+function calcularCarballo(a) {
+  const raet = carballoNum('carRaet') || parseMoney(document.getElementById('montoInput').value);
+  const pDiaz = carballoNum('carPctDiaz') / 100;
+  const pNovarino = carballoNum('carPctNovarino') / 100;
+  const adicionalDiaz = carballoNum('carAdicDiaz');
+  const bRef = baseCarballo('carRef');
+  const bSueldo = baseCarballo('carSueldo');
+  const bSac = baseCarballo('carSac');
+
+  const diazRef = bRef * pDiaz;
+  const diazSueldo = bSueldo * pDiaz;
+  const diazSac = bSac * pDiaz;
+  const totalDiaz = diazRef + diazSueldo + diazSac + adicionalDiaz;
+  const novRef = bRef * pNovarino;
+  const novSueldo = bSueldo * pNovarino;
+  const novSac = bSac * pNovarino;
+  const totalNovarino = novRef + novSueldo + novSac;
+  const totalVara = raet - totalDiaz - totalNovarino;
+
+  const filas = a.bens.map((b, i) => {
+    const nombre = normalizarTexto(b.nombre);
+    if (nombre.includes('diaz')) {
+      return {
+        ...b, idx: i, asign: 0, montoFijo: 0, cuota: totalDiaz, total: totalDiaz,
+        partText: (pDiaz * 100).toFixed(1) + '%',
+        obs: [b.obs, 'Carballo: refrigerio $ ' + fmt(diazRef) + ', sueldo $ ' + fmt(diazSueldo) + ', SAC $ ' + fmt(diazSac) + ', adicional $ ' + fmt(adicionalDiaz) + '.'].filter(Boolean).join(' ')
+      };
+    }
+    if (nombre.includes('novarino')) {
+      return {
+        ...b, idx: i, asign: 0, montoFijo: 0, cuota: totalNovarino, total: totalNovarino,
+        partText: (pNovarino * 100).toFixed(1) + '%',
+        obs: [b.obs, 'Carballo: refrigerio $ ' + fmt(novRef) + ', sueldo $ ' + fmt(novSueldo) + ', SAC $ ' + fmt(novSac) + '.'].filter(Boolean).join(' ')
+      };
+    }
+    return {
+      ...b, idx: i, asign: 0, montoFijo: 0, cuota: totalVara, total: totalVara,
+      partText: 'Diferencia RAET',
+        obs: [b.obs, 'Carballo: Total General RAET menos Diaz y Novarino.'].filter(Boolean).join(' ')
+    };
+  });
+
+  return {
+    monto: raet,
+    totalAsigns: 0,
+    base: bRef + bSueldo + bSac,
+    filas,
+    totalCuotas: filas.reduce((s, f) => s + f.cuota, 0),
+    totalDepositar: filas.reduce((s, f) => s + f.total, 0),
+    control: filas.reduce((s, f) => s + f.total, 0) - raet
+  };
+}
+
+function calcular() {
+  const a = agenteSel;
+  const esGalvanEspecial = a && a.dni === '23821709';
+  if (esGalvanEspecial) {
+    const r = calcularGalvan(a);
+    if (r.monto <= 0) { alert('Ingresá el Total RAET.'); return; }
+    guardarCalculoEstructurado(a, r.monto, r.totalAsigns, r.base, r.filas, r.totalCuotas, r.totalDepositar, r.control);
+    renderReporte(a, r.monto, r.totalAsigns, r.base, r.filas, r.totalCuotas, r.totalDepositar, r.control);
+    return;
+  }
+  const esNietoEspecial = a && a.dni === '27542971';
+  if (esNietoEspecial) {
+    const r = calcularNieto(a);
+    if (r.monto <= 0) { alert('Ingresá el Total VISMA.'); return; }
+    guardarCalculoEstructurado(a, r.monto, r.totalAsigns, r.base, r.filas, r.totalCuotas, r.totalDepositar, r.control);
+    renderReporte(a, r.monto, r.totalAsigns, r.base, r.filas, r.totalCuotas, r.totalDepositar, r.control);
+    return;
+  }
+  const esBragaEspecial = a && a.dni === '20657908';
+  if (esBragaEspecial) {
+    const r = calcularBragaEspecial(a);
+    if (r.monto <= 0) { alert('Ingresá el Total VISMA.'); return; }
+    guardarCalculoEstructurado(a, r.monto, r.totalAsigns, r.base, r.filas, r.totalCuotas, r.totalDepositar, r.control);
+    renderReporte(a, r.monto, r.totalAsigns, r.base, r.filas, r.totalCuotas, r.totalDepositar, r.control);
+    return;
+  }
+  const esVega = a && a.dni === '26181919';
+  if (esVega) {
+    const r = calcularVega(a);
+    guardarCalculoEstructurado(a, r.monto, r.totalAsigns, r.base, r.filas, r.totalCuotas, r.totalDepositar, r.control);
+    renderReporte(a, r.monto, r.totalAsigns, r.base, r.filas, r.totalCuotas, r.totalDepositar, r.control);
+    return;
+  }
+  const esCarballoEspecial = a && a.dni === '18831609';
+  if (esCarballoEspecial) {
+    const r = calcularCarballo(a);
+    if (r.monto <= 0) { alert('IngresÃ¡ el Total General RAET.'); return; }
+    guardarCalculoEstructurado(a, r.monto, r.totalAsigns, r.base, r.filas, r.totalCuotas, r.totalDepositar, r.control);
+    renderReporte(a, r.monto, r.totalAsigns, r.base, r.filas, r.totalCuotas, r.totalDepositar, r.control);
+    return;
+  }
+
+  const monto = parseMoney(document.getElementById('montoInput').value);
+  if (monto <= 0) { alert('Ingresá el monto efectivamente descontado.'); return; }
+
+  const requiereSmvm = a.bens.some(b => b.regla === 'smvm' || b.pisoSmvm);
+  if (requiereSmvm && smvm <= 0) { alert('Ingresá el SMVM vigente para calcular las cuotas y pisos SMVM.'); return; }
+
+  const asigns = {};
+  document.querySelectorAll('.asign-input').forEach(inp => {
+    asigns[parseInt(inp.dataset.i)] = parseMoney(inp.value);
+  });
+  if (a.dni === '18831609') Object.keys(asigns).forEach(k => { asigns[k] = 0; });
+  const totalAsigns = Object.values(asigns).reduce((s,v)=>s+v,0);
+  const base = monto - totalAsigns;
+  if (base < 0) { alert('Las asignaciones familiares superan el monto descontado.'); return; }
+
+  let filas = a.bens.map((b, i) => {
+    let montoFijo = 0;
+    if (b.regla === 'fijo') montoFijo = b.valor;
+    else if (b.regla === 'smvm') montoFijo = smvm * b.valor / 100;
+    return {...b, idx: i, montoFijo, asign: asigns[i]||0};
+  });
+
+  filas = distribuirCuotas(base, filas);
+
+  const totalCuotas = filas.reduce((s,f)=>s+f.cuota,0);
+  const totalDepositar = filas.reduce((s,f)=>s+f.total,0);
+  const control = totalDepositar - monto;
+
+  guardarCalculoEstructurado(a, monto, totalAsigns, base, filas, totalCuotas, totalDepositar, control);
+  renderReporte(a, monto, totalAsigns, base, filas, totalCuotas, totalDepositar, control);
+}
+
+// ============================================================
+// REPORTE
+// ============================================================
+function renderReporte(a, monto, totalAsigns, base, filas, totalCuotas, totalDepositar, control) {
+  const hoy = new Date().toLocaleDateString('es-AR');
+  const repPanel = document.getElementById('repPanel');
+  repPanel.style.display = 'block';
+
+  const controlOk = Math.abs(control) < 0.02;
+
+  let html = `
+    <div class="reporte">
+      <div class="rep-header">
+        <div>
+          <h3>Reporte mensual de cuota alimentaria</h3>
+          <p>Distribución para carga manual en sistema de depósito</p>
+        </div>
+        <div class="rep-meta">
+          <div>Período: <strong>${periodo}</strong></div>
+          <div>Fecha: ${hoy}</div>
+        </div>
+      </div>
+      <div class="rep-agent">
+        <div><span>Agente:</span> <strong>${a.nombre}</strong></div>
+        <div><span>DNI:</span> <strong>${a.dni}</strong></div>
+        <div><span>Monto descontado:</span> <strong>$ ${fmt(monto)}</strong></div>
+        <div><span>Asignaciones incluidas:</span> <strong>$ ${fmt(totalAsigns)}</strong></div>
+        <div><span>Base distribuida:</span> <strong>$ ${fmt(base)}</strong></div>
+      </div>
+      <table class="rep-table">
+        <thead>
+          <tr>
+            <th>Alimentada / Beneficiaria</th>
+            <th>Regla del oficio</th>
+            <th>Participación</th>
+            <th class="money">Cuota distribuida</th>
+            <th class="money">Asignación familiar</th>
+            <th class="money">Monto a depositar</th>
+            <th>Observaciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filas.map(f => {
+            const sumPct = filas.every(ff=>ff.regla==='pct') ? filas.reduce((s,ff)=>s+ff.valor,0) : 1;
+            let partText = '';
+            if (f.regla === 'pct') partText = `${(f.valor/sumPct*100).toFixed(1)}%`;
+            else if (f.regla === 'smvm') partText = `${f.valor}% SMVM`;
+            else partText = `Fijo`;
+            if (f.partText) partText = f.partText;
+            return `<tr>
+              <td><strong>${f.nombre}</strong></td>
+              <td>${f.regla==='pct'?(f.valor*100).toFixed(2).replace(/\.?0+$/,'')+'%':f.regla==='smvm'?f.valor+'% SMVM':'$ '+fmt(f.valor)}</td>
+              <td>${partText}</td>
+              <td class="money">$ ${fmt(f.cuota)}</td>
+              <td class="money">${f.asign>0?'$ '+fmt(f.asign):'-'}</td>
+              <td class="money" style="font-weight:600;color:var(--accent)">$ ${fmt(f.total)}</td>
+              <td style="font-size:12px;color:var(--text3)">${f.obs||''}${f.pisoAplicado ? '<span class="adj-note">Ajustado automáticamente al piso SMVM.</span>' : ''}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3"><strong>TOTAL</strong></td>
+            <td class="money">$ ${fmt(totalCuotas)}</td>
+            <td class="money">$ ${fmt(totalAsigns)}</td>
+            <td class="money">$ ${fmt(totalDepositar)}</td>
+            <td class="${controlOk?'control-ok':'control-bad'}">
+              Control: $ ${fmt(control)} ${controlOk?'✓':'⚠'}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <div class="rep-footer">
+        Reporte generado para carga manual en sistema de depósito. Verificar CBU/datos de pago en el sistema oficial correspondiente.
+        ${!controlOk?`<br><span style="color:var(--accent2)">⚠ Diferencia de $ ${fmt(Math.abs(control))} — revisar redondeos o reglas especiales.</span>`:''}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('repBody').innerHTML = html;
+  repPanel.scrollIntoView({behavior:'smooth'});
+}
+
+function guardarReporte() {
+  if (!agenteSel) return;
+  const repBody = document.getElementById('repBody');
+  if (!repBody || !repBody.innerHTML) { alert('Calculá primero el reporte.'); return; }
+  reportes[agenteSel.dni + '_' + periodo] = { ...(reportes[agenteSel.dni + '_' + periodo] || {}), html: repBody.innerHTML, fecha: new Date().toLocaleDateString('es-AR') };
+  guardar();
+  alert('Reporte guardado correctamente para ' + agenteSel.nombre + ' — ' + periodo);
+}
+
+function copiarReporte() {
+  const rep = document.getElementById('repBody');
+  if (!rep) return;
+  const rows = rep.querySelectorAll('tr');
+  let txt = '';
+  rows.forEach(r => {
+    const cells = Array.from(r.querySelectorAll('th,td')).map(c => c.textContent.trim());
+    txt += cells.join('\t') + '\n';
+  });
+  navigator.clipboard.writeText(txt).then(()=>alert('Reporte copiado al portapapeles')).catch(()=>alert('No se pudo copiar'));
+}
+</script>
+</body>
+</html>

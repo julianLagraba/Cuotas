@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Cuotas Alimentarias - GALVÁN</title>
+  <style>
+    :root{
+      --bg:#f4f6fb;
+      --card:#fff;
+      --ink:#1f2937;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --accent:#2563eb;
+      --accent-soft:#dbeafe;
+      --ok:#047857;
+      --ok-soft:#ecfdf5;
+      --warn:#b45309;
+      --warn-soft:#fffbeb;
+      --danger:#b91c1c;
+      --danger-soft:#fef2f2;
+      --soft:#f8fafc;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial, Helvetica, sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+    }
+    header{
+      background:linear-gradient(135deg,#0f172a,#2563eb);
+      color:white;
+      padding:28px 22px;
+    }
+    header h1{margin:0 0 6px;font-size:27px}
+    header p{margin:0;opacity:.92}
+    main{max-width:1220px;margin:0 auto;padding:22px}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .span-12{grid-column:span 12}
+    .span-8{grid-column:span 8}
+    .span-6{grid-column:span 6}
+    .span-4{grid-column:span 4}
+    .span-3{grid-column:span 3}
+    @media(max-width:900px){
+      .span-8,.span-6,.span-4,.span-3{grid-column:span 12}
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:18px;
+      box-shadow:0 4px 14px rgba(15,23,42,.06);
+    }
+    h2{font-size:18px;margin:0 0 12px}
+    h3{font-size:16px;margin:0 0 10px}
+    .subtitle{font-size:13px;color:var(--muted);margin:4px 0 14px;line-height:1.4}
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:12px;
+    }
+    @media(max-width:1100px){.summary{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:650px){.summary{grid-template-columns:1fr}}
+    .pill{
+      background:var(--soft);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+    }
+    .pill .label{
+      font-size:12px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+    .pill .value{
+      font-size:21px;
+      font-weight:700;
+      margin-top:6px;
+    }
+    .pill.accent{background:var(--accent-soft);border-color:#bfdbfe}
+    .pill.ok{background:var(--ok-soft);border-color:#a7f3d0}
+    .pill.warn{background:var(--warn-soft);border-color:#fde68a}
+    label{
+      display:block;
+      font-size:13px;
+      color:#374151;
+      margin-bottom:6px;
+      font-weight:700;
+    }
+    input{
+      width:100%;
+      padding:10px 11px;
+      border:1px solid #cbd5e1;
+      border-radius:10px;
+      font-size:14px;
+      background:white;
+    }
+    input[readonly]{background:#f3f4f6;color:#374151;font-weight:700}
+    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    @media(max-width:650px){.form-grid{grid-template-columns:1fr}}
+    .field-note{font-size:12px;color:var(--muted);margin-top:4px}
+    .result-card{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:16px;
+      background:white;
+      height:100%;
+    }
+    .result-card h3{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .badge{
+      font-size:12px;
+      background:var(--accent-soft);
+      color:#1e40af;
+      padding:5px 9px;
+      border-radius:999px;
+      white-space:nowrap;
+    }
+    .badge.warn{background:var(--warn-soft);color:#92400e}
+    .rows{margin-top:10px;border-top:1px solid var(--line)}
+    .row{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 0;
+      border-bottom:1px solid var(--line);
+      font-size:14px;
+    }
+    .row strong{font-size:16px;text-align:right}
+    .formula{
+      margin-top:12px;
+      padding:10px;
+      border-radius:12px;
+      background:#f8fafc;
+      border:1px dashed #cbd5e1;
+      color:#475569;
+      font-size:13px;
+      line-height:1.45;
+    }
+    .alert{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid;
+      font-size:14px;
+    }
+    .alert.ok{background:var(--ok-soft);border-color:#a7f3d0;color:#065f46}
+    .alert.warn{background:var(--warn-soft);border-color:#fde68a;color:#92400e}
+    .alert.danger{background:var(--danger-soft);border-color:#fecaca;color:#991b1b}
+    details{
+      background:white;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 14px;
+    }
+    summary{cursor:pointer;font-weight:700}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+      font-size:14px;
+    }
+    th,td{
+      border-bottom:1px solid var(--line);
+      text-align:right;
+      padding:10px 8px;
+    }
+    th:first-child,td:first-child{text-align:left}
+    th{background:#f8fafc;color:#475569}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    button{
+      border:0;
+      background:var(--accent);
+      color:white;
+      padding:11px 14px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    button.secondary{background:#475569}
+    button.light{background:#e5e7eb;color:#111827}
+    .print-only{display:none}
+    @media print{
+      header,.inputs,.actions,details{display:none!important}
+      body{background:white}
+      main{max-width:none;padding:0}
+      .card{box-shadow:none;border:0;border-radius:0}
+      .print-only{display:block}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Calculadora de Cuotas Alimentarias - GALVÁN</h1>
+  <p>PAREDES 18%, BANEGAS dividido en MATÍAS 11% y THIARA 11%, y MÁRQUEZ calculado por diferencia contra RAET.</p>
+</header>
+
+<main>
+  <section class="grid">
+    <div class="card span-12">
+      <h2>Resumen</h2>
+      <div class="summary">
+        <div class="pill accent">
+          <div class="label">Total RAET</div>
+          <div class="value" id="resRaet">$ 0,00</div>
+        </div>
+        <div class="pill ok">
+          <div class="label">PAREDES</div>
+          <div class="value" id="resParedes">$ 0,00</div>
+        </div>
+        <div class="pill ok">
+          <div class="label">BANEGAS total</div>
+          <div class="value" id="resBanegas">$ 0,00</div>
+        </div>
+        <div class="pill warn">
+          <div class="label">MÁRQUEZ diferencia</div>
+          <div class="value" id="resMarquez">$ 0,00</div>
+        </div>
+        <div class="pill">
+          <div class="label">Control final</div>
+          <div class="value" id="resControl">$ 0,00</div>
+        </div>
+      </div>
+      <div id="alertBox" class="alert ok"></div>
+    </div>
+
+    <div class="card span-4 inputs">
+      <h2>Datos generales</h2>
+      <div class="form-grid">
+        <div>
+          <label>Agente</label>
+          <input id="agente" value="GALVÁN" />
+        </div>
+        <div>
+          <label>Período</label>
+          <input id="periodo" placeholder="Ej.: Mayo 2026" />
+        </div>
+        <div>
+          <label>Total RAET</label>
+          <input id="totalRaet" type="number" step="0.01" value="3145603" />
+          <div class="field-note">Monto total contra el que se calcula MÁRQUEZ por diferencia.</div>
+        </div>
+        <div>
+          <label>Refrigerio</label>
+          <input id="refrigerio" type="number" step="0.01" value="249402" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card span-4 inputs">
+      <h2>Porcentajes</h2>
+      <div class="form-grid">
+        <div>
+          <label>PAREDES %</label>
+          <input id="porcParedes" type="number" step="0.01" value="18" />
+        </div>
+        <div>
+          <label>MATÍAS %</label>
+          <input id="porcMatias" type="number" step="0.01" value="11" />
+        </div>
+        <div>
+          <label>THIARA %</label>
+          <input id="porcThiara" type="number" step="0.01" value="11" />
+        </div>
+        <div>
+          <label>BANEGAS total %</label>
+          <input id="porcBanegasTotal" type="text" value="22%" readonly />
+          <div class="field-note">Se calcula como MATÍAS + THIARA.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card span-4">
+      <h2>Regla protegida</h2>
+      <div class="formula">
+        <strong>PAREDES</strong> se calcula al 18%.<br><br>
+        <strong>BANEGAS</strong> se divide en dos: MATÍAS 11% y THIARA 11%.<br><br>
+        <strong>MÁRQUEZ</strong> no se calcula por 60% directo: se calcula como
+        <strong>RAET - PAREDES - BANEGAS</strong>.
+      </div>
+    </div>
+
+    <div class="card span-6 inputs">
+      <h2>Sueldo base PAREDES</h2>
+      <p class="subtitle">PAREDES usa su propia base de sueldo.</p>
+      <div class="form-grid">
+        <div>
+          <label>Bruto remunerativo PAREDES</label>
+          <input id="paredesBruto" type="number" step="0.01" value="3235945" />
+        </div>
+        <div>
+          <label>Descuento %</label>
+          <input id="paredesDesc" type="number" step="0.01" value="30.5" />
+        </div>
+        <div>
+          <label>No remunerativo</label>
+          <input id="paredesNoRem" type="number" step="0.01" value="1507079" />
+        </div>
+        <div>
+          <label>Seguro de vida</label>
+          <input id="paredesSeguro" type="number" step="0.01" value="4457.80" />
+        </div>
+        <div>
+          <label>AFIP que resta</label>
+          <input id="paredesAfipResta" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>AFIP que suma</label>
+          <input id="paredesAfipSuma" type="number" step="0.01" value="507322" />
+        </div>
+      </div>
+      <div class="formula">
+        Base PAREDES = bruto - descuento % + no remunerativo - seguro - AFIP que resta + AFIP que suma.
+      </div>
+    </div>
+
+    <div class="card span-6 inputs">
+      <h2>Sueldo base BANEGAS</h2>
+      <p class="subtitle">MATÍAS y THIARA usan la misma base BANEGAS.</p>
+      <div class="form-grid">
+        <div>
+          <label>Bruto remunerativo BANEGAS</label>
+          <input id="banegasBruto" type="number" step="0.01" value="3085644.16" />
+        </div>
+        <div>
+          <label>Descuento %</label>
+          <input id="banegasDesc" type="number" step="0.01" value="30.5" />
+        </div>
+        <div>
+          <label>No remunerativo</label>
+          <input id="banegasNoRem" type="number" step="0.01" value="1507079" />
+        </div>
+        <div>
+          <label>Seguro de vida</label>
+          <input id="banegasSeguro" type="number" step="0.01" value="4457.80" />
+        </div>
+        <div>
+          <label>AFIP que resta</label>
+          <input id="banegasAfipResta" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>AFIP que suma</label>
+          <input id="banegasAfipSuma" type="number" step="0.01" value="507322" />
+        </div>
+      </div>
+      <div class="formula">
+        Base BANEGAS = bruto - descuento % + no remunerativo - seguro - AFIP que resta + AFIP que suma.
+      </div>
+    </div>
+
+    <div class="card span-6 inputs">
+      <h2>SAC PAREDES</h2>
+      <p class="subtitle">Opcional. Si no corresponde, dejar en cero.</p>
+      <div class="form-grid">
+        <div>
+          <label>SAC bruto remunerativo</label>
+          <input id="paredesSacBruto" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>Descuento SAC %</label>
+          <input id="paredesSacDesc" type="number" step="0.01" value="30.5" />
+        </div>
+        <div>
+          <label>SAC no remunerativo</label>
+          <input id="paredesSacNoRem" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>Seguro SAC</label>
+          <input id="paredesSacSeguro" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>AFIP SAC que resta</label>
+          <input id="paredesSacAfipResta" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>AFIP SAC que suma</label>
+          <input id="paredesSacAfipSuma" type="number" step="0.01" value="0" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card span-6 inputs">
+      <h2>SAC BANEGAS</h2>
+      <p class="subtitle">Opcional. Se aplica a MATÍAS y THIARA según sus porcentajes.</p>
+      <div class="form-grid">
+        <div>
+          <label>SAC bruto remunerativo</label>
+          <input id="banegasSacBruto" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>Descuento SAC %</label>
+          <input id="banegasSacDesc" type="number" step="0.01" value="30.5" />
+        </div>
+        <div>
+          <label>SAC no remunerativo</label>
+          <input id="banegasSacNoRem" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>Seguro SAC</label>
+          <input id="banegasSacSeguro" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>AFIP SAC que resta</label>
+          <input id="banegasSacAfipResta" type="number" step="0.01" value="0" />
+        </div>
+        <div>
+          <label>AFIP SAC que suma</label>
+          <input id="banegasSacAfipSuma" type="number" step="0.01" value="0" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card span-3">
+      <div class="result-card">
+        <h3>PAREDES <span class="badge">18%</span></h3>
+        <div class="rows">
+          <div class="row"><span>Refrigerio</span><strong id="paredesRefri">$ 0,00</strong></div>
+          <div class="row"><span>Sueldo</span><strong id="paredesSueldo">$ 0,00</strong></div>
+          <div class="row"><span>SAC</span><strong id="paredesSac">$ 0,00</strong></div>
+          <div class="row"><span>Total</span><strong id="paredesTotal">$ 0,00</strong></div>
+        </div>
+        <div class="formula">PAREDES = refri 18% + sueldo 18% + SAC 18%.</div>
+      </div>
+    </div>
+
+    <div class="card span-3">
+      <div class="result-card">
+        <h3>MATÍAS <span class="badge">11%</span></h3>
+        <div class="rows">
+          <div class="row"><span>Refrigerio</span><strong id="matiasRefri">$ 0,00</strong></div>
+          <div class="row"><span>Sueldo</span><strong id="matiasSueldo">$ 0,00</strong></div>
+          <div class="row"><span>SAC</span><strong id="matiasSac">$ 0,00</strong></div>
+          <div class="row"><span>Total</span><strong id="matiasTotal">$ 0,00</strong></div>
+        </div>
+        <div class="formula">MATÍAS = refri 11% + sueldo 11% + SAC 11%.</div>
+      </div>
+    </div>
+
+    <div class="card span-3">
+      <div class="result-card">
+        <h3>THIARA <span class="badge">11%</span></h3>
+        <div class="rows">
+          <div class="row"><span>Refrigerio</span><strong id="thiaraRefri">$ 0,00</strong></div>
+          <div class="row"><span>Sueldo</span><strong id="thiaraSueldo">$ 0,00</strong></div>
+          <div class="row"><span>SAC</span><strong id="thiaraSac">$ 0,00</strong></div>
+          <div class="row"><span>Total</span><strong id="thiaraTotal">$ 0,00</strong></div>
+        </div>
+        <div class="formula">THIARA = refri 11% + sueldo 11% + SAC 11%.</div>
+      </div>
+    </div>
+
+    <div class="card span-3">
+      <div class="result-card">
+        <h3>MÁRQUEZ <span class="badge warn">Diferencia</span></h3>
+        <div class="rows">
+          <div class="row"><span>Total RAET</span><strong id="marquezRaet">$ 0,00</strong></div>
+          <div class="row"><span>Menos PAREDES</span><strong id="marquezMenosParedes">$ 0,00</strong></div>
+          <div class="row"><span>Menos BANEGAS</span><strong id="marquezMenosBanegas">$ 0,00</strong></div>
+          <div class="row"><span>Total</span><strong id="marquezTotal">$ 0,00</strong></div>
+        </div>
+        <div class="formula">MÁRQUEZ = RAET - PAREDES - BANEGAS.</div>
+      </div>
+    </div>
+
+    <div class="card span-12">
+      <details open>
+        <summary>Ver detalle de bases y control</summary>
+        <table>
+          <thead>
+            <tr>
+              <th>Concepto</th>
+              <th>Base refrigerio</th>
+              <th>Base sueldo</th>
+              <th>Base SAC</th>
+              <th>%</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>PAREDES</td>
+              <td id="tblParedesRefriBase">$ 0,00</td>
+              <td id="tblParedesSueldoBase">$ 0,00</td>
+              <td id="tblParedesSacBase">$ 0,00</td>
+              <td id="tblParedesPct">18%</td>
+              <td id="tblParedesTotal">$ 0,00</td>
+            </tr>
+            <tr>
+              <td>MATÍAS</td>
+              <td id="tblMatiasRefriBase">$ 0,00</td>
+              <td id="tblBanegasSueldoBase1">$ 0,00</td>
+              <td id="tblBanegasSacBase1">$ 0,00</td>
+              <td id="tblMatiasPct">11%</td>
+              <td id="tblMatiasTotal">$ 0,00</td>
+            </tr>
+            <tr>
+              <td>THIARA</td>
+              <td id="tblThiaraRefriBase">$ 0,00</td>
+              <td id="tblBanegasSueldoBase2">$ 0,00</td>
+              <td id="tblBanegasSacBase2">$ 0,00</td>
+              <td id="tblThiaraPct">11%</td>
+              <td id="tblThiaraTotal">$ 0,00</td>
+            </tr>
+            <tr>
+              <th>BANEGAS total</th>
+              <th></th><th></th><th></th>
+              <th id="tblBanegasPct">22%</th>
+              <th id="tblBanegasTotal">$ 0,00</th>
+            </tr>
+            <tr>
+              <th>MÁRQUEZ</th>
+              <th colspan="4">Total RAET - PAREDES - BANEGAS</th>
+              <th id="tblMarquezTotal">$ 0,00</th>
+            </tr>
+            <tr>
+              <th>Control final</th>
+              <th colspan="4">PAREDES + BANEGAS + MÁRQUEZ</th>
+              <th id="tblControl">$ 0,00</th>
+            </tr>
+          </tbody>
+        </table>
+      </details>
+
+      <div class="actions">
+        <button onclick="window.print()">Imprimir reporte</button>
+        <button class="secondary" onclick="exportCSV()">Exportar CSV</button>
+        <button class="light" onclick="resetDemo()">Restaurar valores de la planilla</button>
+      </div>
+    </div>
+
+    <div class="card span-12 print-only">
+      <h2>Reporte imprimible - GALVÁN</h2>
+      <p><strong>Agente:</strong> <span id="printAgente"></span></p>
+      <p><strong>Período:</strong> <span id="printPeriodo"></span></p>
+    </div>
+  </section>
+</main>
+
+<script>
+  const ids = [
+    'agente','periodo','totalRaet','refrigerio',
+    'porcParedes','porcMatias','porcThiara',
+    'paredesBruto','paredesDesc','paredesNoRem','paredesSeguro','paredesAfipResta','paredesAfipSuma',
+    'banegasBruto','banegasDesc','banegasNoRem','banegasSeguro','banegasAfipResta','banegasAfipSuma',
+    'paredesSacBruto','paredesSacDesc','paredesSacNoRem','paredesSacSeguro','paredesSacAfipResta','paredesSacAfipSuma',
+    'banegasSacBruto','banegasSacDesc','banegasSacNoRem','banegasSacSeguro','banegasSacAfipResta','banegasSacAfipSuma'
+  ];
+
+  function n(id){
+    const el = document.getElementById(id);
+    const v = parseFloat(el.value);
+    return isNaN(v) ? 0 : v;
+  }
+
+  function money(v){
+    return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(v || 0);
+  }
+
+  function pct(v){
+    return (v || 0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:2}) + '%';
+  }
+
+  function sueldoBase(prefix){
+    const bruto = n(prefix + 'Bruto');
+    const desc = n(prefix + 'Desc');
+    const noRem = n(prefix + 'NoRem');
+    const seguro = n(prefix + 'Seguro');
+    const afipResta = n(prefix + 'AfipResta');
+    const afipSuma = n(prefix + 'AfipSuma');
+    return bruto - (bruto * desc / 100) + noRem - seguro - afipResta + afipSuma;
+  }
+
+  function sacBase(prefix){
+    const bruto = n(prefix + 'SacBruto');
+    const desc = n(prefix + 'SacDesc');
+    const noRem = n(prefix + 'SacNoRem');
+    const seguro = n(prefix + 'SacSeguro');
+    const afipResta = n(prefix + 'SacAfipResta');
+    const afipSuma = n(prefix + 'SacAfipSuma');
+    return bruto - (bruto * desc / 100) + noRem - seguro - afipResta + afipSuma;
+  }
+
+  function calc(){
+    const totalRaet = n('totalRaet');
+    const refri = n('refrigerio');
+
+    const pParedes = n('porcParedes') / 100;
+    const pMatias = n('porcMatias') / 100;
+    const pThiara = n('porcThiara') / 100;
+
+    document.getElementById('porcBanegasTotal').value = pct(n('porcMatias') + n('porcThiara'));
+
+    const baseParedesSueldo = sueldoBase('paredes');
+    const baseBanegasSueldo = sueldoBase('banegas');
+    const baseParedesSac = sacBase('paredes');
+    const baseBanegasSac = sacBase('banegas');
+
+    const paredesRefri = refri * pParedes;
+    const paredesSueldo = baseParedesSueldo * pParedes;
+    const paredesSac = baseParedesSac * pParedes;
+    const paredesTotal = paredesRefri + paredesSueldo + paredesSac;
+
+    const matiasRefri = refri * pMatias;
+    const matiasSueldo = baseBanegasSueldo * pMatias;
+    const matiasSac = baseBanegasSac * pMatias;
+    const matiasTotal = matiasRefri + matiasSueldo + matiasSac;
+
+    const thiaraRefri = refri * pThiara;
+    const thiaraSueldo = baseBanegasSueldo * pThiara;
+    const thiaraSac = baseBanegasSac * pThiara;
+    const thiaraTotal = thiaraRefri + thiaraSueldo + thiaraSac;
+
+    const banegasTotal = matiasTotal + thiaraTotal;
+    const marquezTotal = totalRaet - paredesTotal - banegasTotal;
+    const control = paredesTotal + banegasTotal + marquezTotal;
+
+    // Resumen
+    document.getElementById('resRaet').textContent = money(totalRaet);
+    document.getElementById('resParedes').textContent = money(paredesTotal);
+    document.getElementById('resBanegas').textContent = money(banegasTotal);
+    document.getElementById('resMarquez').textContent = money(marquezTotal);
+    document.getElementById('resControl').textContent = money(control);
+
+    // Cards
+    document.getElementById('paredesRefri').textContent = money(paredesRefri);
+    document.getElementById('paredesSueldo').textContent = money(paredesSueldo);
+    document.getElementById('paredesSac').textContent = money(paredesSac);
+    document.getElementById('paredesTotal').textContent = money(paredesTotal);
+
+    document.getElementById('matiasRefri').textContent = money(matiasRefri);
+    document.getElementById('matiasSueldo').textContent = money(matiasSueldo);
+    document.getElementById('matiasSac').textContent = money(matiasSac);
+    document.getElementById('matiasTotal').textContent = money(matiasTotal);
+
+    document.getElementById('thiaraRefri').textContent = money(thiaraRefri);
+    document.getElementById('thiaraSueldo').textContent = money(thiaraSueldo);
+    document.getElementById('thiaraSac').textContent = money(thiaraSac);
+    document.getElementById('thiaraTotal').textContent = money(thiaraTotal);
+
+    document.getElementById('marquezRaet').textContent = money(totalRaet);
+    document.getElementById('marquezMenosParedes').textContent = '- ' + money(paredesTotal);
+    document.getElementById('marquezMenosBanegas').textContent = '- ' + money(banegasTotal);
+    document.getElementById('marquezTotal').textContent = money(marquezTotal);
+
+    // Tabla
+    document.getElementById('tblParedesRefriBase').textContent = money(refri);
+    document.getElementById('tblParedesSueldoBase').textContent = money(baseParedesSueldo);
+    document.getElementById('tblParedesSacBase').textContent = money(baseParedesSac);
+    document.getElementById('tblParedesPct').textContent = pct(n('porcParedes'));
+    document.getElementById('tblParedesTotal').textContent = money(paredesTotal);
+
+    document.getElementById('tblMatiasRefriBase').textContent = money(refri);
+    document.getElementById('tblBanegasSueldoBase1').textContent = money(baseBanegasSueldo);
+    document.getElementById('tblBanegasSacBase1').textContent = money(baseBanegasSac);
+    document.getElementById('tblMatiasPct').textContent = pct(n('porcMatias'));
+    document.getElementById('tblMatiasTotal').textContent = money(matiasTotal);
+
+    document.getElementById('tblThiaraRefriBase').textContent = money(refri);
+    document.getElementById('tblBanegasSueldoBase2').textContent = money(baseBanegasSueldo);
+    document.getElementById('tblBanegasSacBase2').textContent = money(baseBanegasSac);
+    document.getElementById('tblThiaraPct').textContent = pct(n('porcThiara'));
+    document.getElementById('tblThiaraTotal').textContent = money(thiaraTotal);
+
+    document.getElementById('tblBanegasPct').textContent = pct(n('porcMatias') + n('porcThiara'));
+    document.getElementById('tblBanegasTotal').textContent = money(banegasTotal);
+    document.getElementById('tblMarquezTotal').textContent = money(marquezTotal);
+    document.getElementById('tblControl').textContent = money(control);
+
+    document.getElementById('printAgente').textContent = document.getElementById('agente').value || '';
+    document.getElementById('printPeriodo').textContent = document.getElementById('periodo').value || '';
+
+    const alert = document.getElementById('alertBox');
+    if(totalRaet <= 0){
+      alert.className = 'alert warn';
+      alert.textContent = 'Cargar Total RAET para calcular correctamente MÁRQUEZ por diferencia.';
+    } else if(marquezTotal < 0){
+      alert.className = 'alert danger';
+      alert.textContent = 'Atención: MÁRQUEZ da negativo. Revisar Total RAET o los importes cargados para PAREDES/BANEGAS.';
+    } else {
+      alert.className = 'alert ok';
+      alert.textContent = 'Control correcto: PAREDES + BANEGAS + MÁRQUEZ coincide con Total RAET.';
+    }
+
+    return {
+      totalRaet, refri,
+      baseParedesSueldo, baseBanegasSueldo, baseParedesSac, baseBanegasSac,
+      paredesRefri, paredesSueldo, paredesSac, paredesTotal,
+      matiasRefri, matiasSueldo, matiasSac, matiasTotal,
+      thiaraRefri, thiaraSueldo, thiaraSac, thiaraTotal,
+      banegasTotal, marquezTotal, control
+    };
+  }
+
+  function exportCSV(){
+    const r = calc();
+    const rows = [
+      ['Agente', document.getElementById('agente').value],
+      ['Periodo', document.getElementById('periodo').value],
+      ['Total RAET', r.totalRaet],
+      ['Refrigerio base', r.refri],
+      ['Base sueldo PAREDES', r.baseParedesSueldo],
+      ['Base sueldo BANEGAS', r.baseBanegasSueldo],
+      ['PAREDES refrigerio', r.paredesRefri],
+      ['PAREDES sueldo', r.paredesSueldo],
+      ['PAREDES SAC', r.paredesSac],
+      ['PAREDES total', r.paredesTotal],
+      ['MATIAS refrigerio', r.matiasRefri],
+      ['MATIAS sueldo', r.matiasSueldo],
+      ['MATIAS SAC', r.matiasSac],
+      ['MATIAS total', r.matiasTotal],
+      ['THIARA refrigerio', r.thiaraRefri],
+      ['THIARA sueldo', r.thiaraSueldo],
+      ['THIARA SAC', r.thiaraSac],
+      ['THIARA total', r.thiaraTotal],
+      ['BANEGAS total', r.banegasTotal],
+      ['MARQUEZ por diferencia', r.marquezTotal],
+      ['Control final', r.control]
+    ];
+    const csv = rows.map(row => row.map(x => `"${String(x).replaceAll('"','""')}"`).join(';')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'calculo_cuotas_galvan.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function resetDemo(){
+    document.getElementById('agente').value = 'GALVÁN';
+    document.getElementById('periodo').value = '';
+    document.getElementById('totalRaet').value = '3145603';
+    document.getElementById('refrigerio').value = '249402';
+    document.getElementById('porcParedes').value = '18';
+    document.getElementById('porcMatias').value = '11';
+    document.getElementById('porcThiara').value = '11';
+
+    document.getElementById('paredesBruto').value = '3235945';
+    document.getElementById('paredesDesc').value = '30.5';
+    document.getElementById('paredesNoRem').value = '1507079';
+    document.getElementById('paredesSeguro').value = '4457.80';
+    document.getElementById('paredesAfipResta').value = '0';
+    document.getElementById('paredesAfipSuma').value = '507322';
+
+    document.getElementById('banegasBruto').value = '3085644.16';
+    document.getElementById('banegasDesc').value = '30.5';
+    document.getElementById('banegasNoRem').value = '1507079';
+    document.getElementById('banegasSeguro').value = '4457.80';
+    document.getElementById('banegasAfipResta').value = '0';
+    document.getElementById('banegasAfipSuma').value = '507322';
+
+    ['paredesSacBruto','paredesSacNoRem','paredesSacSeguro','paredesSacAfipResta','paredesSacAfipSuma',
+     'banegasSacBruto','banegasSacNoRem','banegasSacSeguro','banegasSacAfipResta','banegasSacAfipSuma'].forEach(id => {
+      document.getElementById(id).value = '0';
+    });
+    document.getElementById('paredesSacDesc').value = '30.5';
+    document.getElementById('banegasSacDesc').value = '30.5';
+    calc();
+  }
+
+  ids.forEach(id => document.getElementById(id).addEventListener('input', calc));
+  calc();
+</script>
+</body>
+</html>
