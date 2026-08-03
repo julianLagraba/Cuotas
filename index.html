@@ -447,6 +447,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="./xlsx.full.min.js"></script>
 <script>
 // ============================================================
@@ -967,26 +968,35 @@ function reportesActualesParaExportar() {
   return Array.from(porDni.values());
 }
 
-function formatearMonedaExcel(ws, rows, header) {
-  const range = XLSX.utils.decode_range(ws['!ref']);
-  let col = -1;
-  for (let c = range.s.c; c <= range.e.c; c++) {
-    const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
-    if (cell && cell.v === header) col = c;
-  }
-  if (col < 0) return;
-  for (let r = 1; r <= rows.length; r++) {
-    const addr = XLSX.utils.encode_cell({ r, c: col });
-    if (ws[addr]) {
-      ws[addr].t = 'n';
-      ws[addr].z = '"$" #,##0.00';
+function formatearMonedaExcel(ws, rows, headers) {
+  const xlsxLib = window.XLSX || (typeof XLSX !== 'undefined' ? XLSX : null);
+  if (!xlsxLib || !ws['!ref']) return;
+  const range = xlsxLib.utils.decode_range(ws['!ref']);
+  const headerList = Array.isArray(headers) ? headers : [headers];
+
+  headerList.forEach(header => {
+    let col = -1;
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cell = ws[xlsxLib.utils.encode_cell({ r: 0, c })];
+      if (cell && cell.v === header) col = c;
     }
-  }
+    if (col < 0) return;
+    for (let r = 1; r <= rows.length; r++) {
+      const addr = xlsxLib.utils.encode_cell({ r, c: col });
+      if (ws[addr]) {
+        const val = Number(ws[addr].v) || 0;
+        ws[addr].v = val;
+        ws[addr].t = 'n';
+        ws[addr].z = '"$" #,##0.00';
+      }
+    }
+  });
 }
 
 async function exportarReporteGeneral() {
-  if (!window.XLSX) { alert('No se encontró la librería de Excel.'); return; }
+  const xlsxLib = window.XLSX || (typeof XLSX !== 'undefined' ? XLSX : null);
   const registros = reportesActualesParaExportar();
+
   if (!registros.length) {
     alert('Todavía no hay cálculos guardados para exportar. Calculá al menos un agente.');
     return;
@@ -1004,24 +1014,45 @@ async function exportarReporteGeneral() {
         Alimentada: f.alimentada,
         Porcentaje: f.regla,
         Participacion: f.participacion,
+        'Cuota distribuida': f.cuota || 0,
+        'Asignación familiar': f.asignacion || 0,
         'Monto a depositar': f.montoDepositar ?? f.cuota,
-        Observaciones: f.observaciones
+        Observaciones: f.observaciones || ''
       }));
     });
 
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(rows);
+  if (!xlsxLib) {
+    try {
+      actualizarEstadoImportacion('Exportando...');
+      const res = await fetch('/export-general', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows, periodo })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        actualizarEstadoImportacion('Excel guardado');
+        alert('Excel generado y guardado en el servidor: ' + (data.path || 'exports/'));
+        return;
+      }
+    } catch(e) {}
+    alert('No se encontró la librería de Excel.');
+    return;
+  }
+
+  const wb = xlsxLib.utils.book_new();
+  const ws = xlsxLib.utils.json_to_sheet(rows);
   ws['!cols'] = [
-    {wch: 18}, {wch: 32}, {wch: 12}, {wch: 16}, {wch: 28},
-    {wch: 14}, {wch: 16}, {wch: 18}, {wch: 42}
+    {wch: 16}, {wch: 32}, {wch: 14}, {wch: 18}, {wch: 28},
+    {wch: 14}, {wch: 16}, {wch: 18}, {wch: 20}, {wch: 18}, {wch: 42}
   ];
-  formatearMonedaExcel(ws, rows, 'Monto a depositar');
-  XLSX.utils.book_append_sheet(wb, ws, 'Reporte general');
+  formatearMonedaExcel(ws, rows, ['Total descontado', 'Cuota distribuida', 'Asignación familiar', 'Monto a depositar']);
+  xlsxLib.utils.book_append_sheet(wb, ws, 'Reporte general');
   const safePeriodo = String(periodo || 'periodo').replace(/[\/:*?"<>|]+/g, '-').replace(/\s+/g, '_');
   const fileName = 'reporte_general_cuotas_' + safePeriodo + '.xlsx';
 
   actualizarEstadoImportacion('Exportando...');
-  XLSX.writeFile(wb, fileName);
+  xlsxLib.writeFile(wb, fileName);
   actualizarEstadoImportacion('Excel descargado');
   alert('Excel descargado con éxito.');
 }
@@ -1387,6 +1418,7 @@ function renderMain() {
           <button class="btn btn-success" onclick="guardarReporte()">Guardar reporte del mes</button>
           <button class="btn btn-outline" onclick="window.print()">Imprimir / PDF</button>
           <button class="btn btn-outline" onclick="copiarReporte()">Copiar texto</button>
+          <button class="btn btn-outline" onclick="exportarExcelUnico()">Exportar Excel</button>
         </div>
       </div>
     </div>
@@ -2017,6 +2049,67 @@ function copiarReporte() {
     txt += cells.join('\t') + '\n';
   });
   navigator.clipboard.writeText(txt).then(()=>alert('Reporte copiado al portapapeles')).catch(()=>alert('No se pudo copiar'));
+}
+
+async function exportarExcelUnico() {
+  const xlsxLib = window.XLSX || (typeof XLSX !== 'undefined' ? XLSX : null);
+  if (!xlsxLib) {
+    alert('No se encontró la librería de Excel.');
+    return;
+  }
+  if (!agenteSel) {
+    alert('Seleccioná un agente primero.');
+    return;
+  }
+
+  const key = agenteSel.dni + '_' + periodo;
+  let rep = reportes[key];
+
+  if (!rep || !Array.isArray(rep.filas) || !rep.filas.length) {
+    const repBody = document.getElementById('repBody');
+    if (!repBody || !repBody.innerHTML) {
+      alert('Calculá primero la cuota alimentaria para este agente.');
+      return;
+    }
+    calcular();
+    rep = reportes[key];
+  }
+
+  if (!rep || !Array.isArray(rep.filas) || !rep.filas.length) {
+    alert('No se encontraron datos calculados para exportar.');
+    return;
+  }
+
+  const rows = rep.filas.map(f => ({
+    Periodo: rep.periodo || periodo,
+    Agente: rep.agente || agenteSel.nombre,
+    DNI: rep.dni || agenteSel.dni,
+    'Total descontado': rep.totalDescontado || rep.monto || 0,
+    Alimentada: f.alimentada,
+    Porcentaje: f.regla,
+    Participación: f.participacion,
+    'Cuota distribuida': f.cuota || 0,
+    'Asignación familiar': f.asignacion || 0,
+    'Monto a depositar': f.montoDepositar ?? f.cuota,
+    Observaciones: f.observaciones || ''
+  }));
+
+  const wb = xlsxLib.utils.book_new();
+  const ws = xlsxLib.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 16 }, { wch: 32 }, { wch: 14 }, { wch: 18 }, { wch: 28 },
+    { wch: 14 }, { wch: 16 }, { wch: 18 }, { wch: 20 }, { wch: 18 }, { wch: 42 }
+  ];
+  formatearMonedaExcel(ws, rows, ['Total descontado', 'Cuota distribuida', 'Asignación familiar', 'Monto a depositar']);
+
+  const safeNombre = String(agenteSel.nombre || 'agente').replace(/[\/:*?"<>|]+/g, '-').replace(/\s+/g, '_');
+  const safePeriodo = String(periodo || 'periodo').replace(/[\/:*?"<>|]+/g, '-').replace(/\s+/g, '_');
+  const fileName = 'cuota_' + safeNombre + '_' + safePeriodo + '.xlsx';
+
+  const sheetName = String(agenteSel.nombre || 'Caso').slice(0, 30).replace(/[\/*?:\[\]\\]/g, '');
+  xlsxLib.utils.book_append_sheet(wb, ws, sheetName);
+  xlsxLib.writeFile(wb, fileName);
+  alert('Excel del agente ' + agenteSel.nombre + ' descargado con éxito.');
 }
 </script>
 </body>
